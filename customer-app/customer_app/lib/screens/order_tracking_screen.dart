@@ -1,0 +1,209 @@
+import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:lottie/lottie.dart';
+import '../services/api_service.dart';
+import '../utils/constants.dart';
+
+class OrderTrackingScreen extends StatefulWidget {
+  final String orderId;
+  final String status;
+
+  const OrderTrackingScreen({super.key, required this.orderId, required this.status});
+
+  @override
+  State<OrderTrackingScreen> createState() => _OrderTrackingScreenState();
+}
+
+class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
+  late String currentStatus;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    currentStatus = widget.status;
+    _startPolling();
+  }
+
+  void _startPolling() {
+    _timer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+       try {
+         final resp = await ApiService.get('/orders/${widget.orderId}');
+         if (resp.statusCode == 200) {
+           final data = jsonDecode(resp.body);
+           if (mounted) {
+             setState(() {
+               currentStatus = data['status'];
+             });
+             if (currentStatus == 'DELIVERED' || currentStatus == 'CANCELLED') {
+               _timer?.cancel();
+             }
+           }
+         }
+       } catch (e) {
+         print(e);
+       }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.white,
+      appBar: AppBar(
+        title: Text('Track Order', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.white,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            children: [
+              _buildLottieHeader(),
+              const SizedBox(height: 32),
+              _buildOrderInfo(),
+              const SizedBox(height: 48),
+              _buildStepper(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLottieHeader() {
+    String lottieUrl = 'https://assets9.lottiefiles.com/packages/lf20_jmejebmv.json'; // Delivery packing
+    if (currentStatus == 'OUT_FOR_DELIVERY') {
+      lottieUrl = 'https://assets5.lottiefiles.com/packages/lf20_6p87kbv8.json'; // Delivery bike
+    } else if (currentStatus == 'DELIVERED') {
+      lottieUrl = 'https://assets10.lottiefiles.com/packages/lf20_pqnfmone.json'; // Success/Delivered
+    }
+
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
+      ),
+      child: Lottie.network(
+        lottieUrl,
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.delivery_dining_rounded, size: 80, color: AppColors.primary),
+      ),
+    );
+  }
+
+  Widget _buildOrderInfo() {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+            child: const Icon(Icons.receipt_long_rounded, color: AppColors.primary, size: 30),
+          ),
+          const SizedBox(width: AppSpacing.l),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Order #${widget.orderId.substring(0, 8).toUpperCase()}', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18)),
+                const SizedBox(height: 4),
+                Text(
+                  'Current Status: ${currentStatus.replaceAll('_', ' ')}',
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepper() {
+    return Column(
+      children: [
+        _buildStep('Order Placed', 'We have received your order', true, isFirst: true),
+        _buildStep('Preparing', 'Our chef is preparing your meal', _isStepActive('PREPARING')),
+        _buildStep('Out for Delivery', 'Your meal is on the way', _isStepActive('OUT_FOR_DELIVERY')),
+        _buildStep('Delivered', 'Enjoy your delicious meal!', _isStepActive('DELIVERED'), isLast: true),
+      ],
+    );
+  }
+
+  bool _isStepActive(String step) {
+    List<String> statuses = ['PENDING', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+    int currentIndex = statuses.indexOf(currentStatus);
+    int stepIndex = statuses.indexOf(step);
+    return currentIndex >= stepIndex;
+  }
+
+  Widget _buildStep(String title, String subtitle, bool isCompleted, {bool isFirst = false, bool isLast = false}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: isCompleted ? AppColors.primary : AppColors.background,
+                shape: BoxShape.circle,
+                border: isCompleted ? null : Border.all(color: Colors.black12),
+              ),
+              child: isCompleted 
+                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 20) 
+                  : Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.black12, shape: BoxShape.circle)),
+            ),
+            if (!isLast)
+              Container(
+                width: 2,
+                height: 50,
+                color: isCompleted ? AppColors.primary : AppColors.background,
+              ),
+          ],
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isCompleted ? AppColors.text : AppColors.textSecondary,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}

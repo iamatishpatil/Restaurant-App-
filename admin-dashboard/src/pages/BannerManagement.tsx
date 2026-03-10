@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Trash2, Image as ImageIcon, Link as LinkIcon, Edit2 } from 'lucide-react';
-import { getImageUrl } from '../utils/imageUtils';
+import { getImageUrl, onImageError } from '../utils/imageUtils';
 
 const BannerManagement = () => {
   const [banners, setBanners] = useState([]);
@@ -113,7 +113,7 @@ const BannerManagement = () => {
           {banners.map((banner: any) => (
             <div key={banner.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative group hover:shadow-md transition">
               <div className="h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative group">
-                <img src={getImageUrl(banner.image)} alt={banner.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                <img src={getImageUrl(banner.image)} alt={banner.title} onError={onImageError} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition"></div>
               </div>
               <div className="p-4 flex justify-between items-center">
@@ -151,7 +151,7 @@ const BannerManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image</label>
                 <div className="flex items-center gap-4">
                   {newBanner.image && (
-                    <img src={getImageUrl(newBanner.image)} className="h-16 w-16 object-cover rounded-lg border" />
+                    <img src={getImageUrl(newBanner.image)} onError={onImageError} className="h-16 w-16 object-cover rounded-lg border" />
                   )}
                   <label className="flex-1 border-2 border-dashed border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition">
                     <ImageIcon className="h-6 w-6 text-gray-400 mb-1" />

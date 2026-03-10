@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Trash2, Edit2, Image as ImageIcon } from 'lucide-react';
-import { getImageUrl } from '../utils/imageUtils';
+import { getImageUrl, onImageError } from '../utils/imageUtils';
 
 const CategoryManagement = () => {
   const [categories, setCategories] = useState([]);
@@ -118,7 +118,7 @@ const CategoryManagement = () => {
             <div key={cat.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden group hover:shadow-md transition">
                <div className="h-40 bg-gray-100 flex items-center justify-center overflow-hidden relative">
                   {cat.image ? (
-                    <img src={getImageUrl(cat.image)} alt={cat.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                    <img src={getImageUrl(cat.image)} alt={cat.name} onError={onImageError} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                   ) : (
                     <ImageIcon className="h-12 w-12 text-gray-300" />
                   )}
@@ -154,7 +154,7 @@ const CategoryManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category Image</label>
                 <div className="flex items-center gap-4">
                   {newCategory.image && (
-                    <img src={getImageUrl(newCategory.image)} className="h-16 w-16 object-cover rounded-lg border" />
+                    <img src={getImageUrl(newCategory.image)} onError={onImageError} className="h-16 w-16 object-cover rounded-lg border" />
                   )}
                   <label className="flex-1 border-2 border-dashed border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition">
                     <ImageIcon className="h-6 w-6 text-gray-400 mb-1" />

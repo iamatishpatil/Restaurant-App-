@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Edit, Trash2, X, Search } from 'lucide-react';
 import { getImageUrl } from '../utils/imageUtils';
+import { formatINR } from '../utils/formatCurrency';
 
 const MenuManagement = () => {
   const [items, setItems] = useState([]);
@@ -91,14 +92,15 @@ const MenuManagement = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Menu Management</h1>
-          <p className="text-gray-500">Add, edit or remove dishes from your menu.</p>
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Menu Management</h1>
+          <p className="text-gray-400 text-sm mt-1">Add, edit or remove dishes from your menu.</p>
         </div>
         <button 
           onClick={() => { setEditingItem(null); setIsModalOpen(true); }}
-          className="bg-primary text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-red-600 transition"
+          className="text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-sm transition hover:shadow-md"
+          style={{ background: 'linear-gradient(135deg, #ff4d4d, #e63946)' }}
         >
-          <Plus className="h-5 w-5" /> Add New Dish
+          <Plus className="h-4 w-4" /> Add New Dish
         </button>
       </div>
 
@@ -158,7 +160,7 @@ const MenuManagement = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 font-medium">{item.category?.name || 'Uncategorized'}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-800">₹{item.price}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900">{formatINR(item.price)}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${item.isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {item.isAvailable ? 'Available' : 'Sold Out'}
@@ -208,7 +210,7 @@ const MenuManagement = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
                   <input type="number" step="0.01" required className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-primary" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} />
                 </div>
               </div>

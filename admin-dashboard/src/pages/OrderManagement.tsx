@@ -9,8 +9,10 @@ import {
   ChefHat,
   ClipboardList,
   Search,
-  XCircle
+  XCircle,
+  RefreshCw
 } from 'lucide-react';
+import { formatINR } from '../utils/formatCurrency';
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
@@ -71,20 +73,33 @@ const OrderManagement = () => {
     return matchesStatus && matchesSearch;
   });
 
+  const statusConfig: Record<string, { label: string; bg: string; text: string }> = {
+    PENDING:          { label: 'Pending',          bg: 'bg-yellow-50',  text: 'text-yellow-700' },
+    PREPARING:        { label: 'Preparing',        bg: 'bg-blue-50',    text: 'text-blue-700' },
+    COOKING:          { label: 'Cooking',          bg: 'bg-orange-50',  text: 'text-orange-700' },
+    PACKING:          { label: 'Packing',          bg: 'bg-purple-50',  text: 'text-purple-700' },
+    OUT_FOR_DELIVERY: { label: 'Out for Delivery', bg: 'bg-indigo-50',  text: 'text-indigo-700' },
+    DELIVERED:        { label: 'Delivered',        bg: 'bg-green-50',   text: 'text-green-700' },
+    CANCELLED:        { label: 'Cancelled',        bg: 'bg-red-50',     text: 'text-red-700' },
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Order Management</h1>
-          <p className="text-gray-500">Manage and track all incoming restaurant orders.</p>
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Order Management</h1>
+          <p className="text-gray-400 text-sm mt-1">Manage and track all incoming restaurant orders.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {['ALL', 'PENDING', 'PREPARING', 'COOKING', 'PACKING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].map((s) => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition ${filterStatus === s ? 'bg-primary text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                }`}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${
+                filterStatus === s
+                  ? 'bg-red-500 text-white border-red-500 shadow-sm'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-red-300 hover:text-red-500'
+              }`}
             >
               {s.replace(/_/g, ' ')}
             </button>
@@ -92,84 +107,91 @@ const OrderManagement = () => {
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between gap-4">
-        <div className="relative w-full md:w-80">
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input
             type="text"
-            placeholder="Search by ID or Customer..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-primary text-sm font-medium"
+            placeholder="Search by Order ID or Customer..."
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm bg-gray-50 focus:bg-white transition"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        {isLoading && <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>}
+        {isLoading && <RefreshCw className="animate-spin h-4 w-4 text-gray-400" />}
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="space-y-3">
         {isLoading && !orders.length ? (
-          <div className="py-20 flex flex-col items-center justify-center bg-white rounded-xl border border-gray-100 shadow-sm">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-            <p className="text-gray-500 font-medium">Fetching orders...</p>
+          <div className="py-20 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mb-4" />
+            <p className="text-gray-400 font-medium text-sm">Fetching orders...</p>
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="bg-white p-12 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500">
-            <ClipboardList className="h-12 w-12 mb-4 opacity-20" />
-            <p className="text-lg font-medium">No orders found</p>
-            <p className="text-sm">Try adjusting your filters or search terms.</p>
+          <div className="bg-white p-12 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400">
+            <ClipboardList className="h-12 w-12 mb-4 opacity-30" />
+            <p className="font-semibold">No orders found</p>
+            <p className="text-sm mt-1">Try adjusting your filters or search terms.</p>
           </div>
         ) : (
-          filteredOrders.map((order: any) => (
-            <div key={order.id} className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4 md:gap-6">
-                <div className="p-3 md:p-4 rounded-full bg-gray-50 flex-shrink-0">
-                  {getStatusIcon(order.status)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-bold text-gray-800 truncate">Order #{order.id.slice(0, 8)}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${order.deliveryType === 'DELIVERY' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
-                      }`}>
-                      {order.deliveryType}
-                    </span>
+          filteredOrders.map((order: any) => {
+            const sc = statusConfig[order.status] || { label: order.status, bg: 'bg-gray-50', text: 'text-gray-600' };
+            return (
+              <div key={order.id} className="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-gray-50 flex-shrink-0">
+                    {getStatusIcon(order.status)}
                   </div>
-                  <p className="text-sm text-gray-500 truncate">Customer: <span className="font-medium text-gray-700">{order.user?.name}</span> • {order.totalItems} items</p>
-                  {order.deliveryType === 'DELIVERY' && order.address && (
-                    <p className="text-xs text-gray-400 mt-1 italic">
-                      Deliver to: {order.address.addressLine1}, {order.address.city}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="font-bold text-gray-900 text-sm">#{order.id.slice(0, 8).toUpperCase()}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${sc.bg} ${sc.text}`}>
+                        {sc.label}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                        order.deliveryType === 'DELIVERY' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'
+                      }`}>
+                        {order.deliveryType}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 truncate">
+                      <span className="font-medium text-gray-700">{order.user?.name}</span> &bull; {order.totalItems} item{order.totalItems !== 1 ? 's' : ''}
                     </p>
-                  )}
+                    {order.deliveryType === 'DELIVERY' && order.address && (
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">📍 {order.address.addressLine1}, {order.address.city}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between md:justify-end gap-4 md:gap-6 border-t md:border-t-0 pt-3 md:pt-0">
+                  <div className="text-left md:text-right">
+                    <p className="text-base font-extrabold text-gray-900">{formatINR(order.totalPrice)}</p>
+                    <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={order.status}
+                      onChange={(e) => updateStatus(order.id, e.target.value)}
+                      className="px-3 py-2 border border-gray-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-red-400 bg-gray-50 font-medium cursor-pointer transition hover:border-gray-300"
+                    >
+                      <option value="PENDING">Pending</option>
+                      <option value="PREPARING">Preparing</option>
+                      <option value="COOKING">Cooking</option>
+                      <option value="PACKING">Packing</option>
+                      <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                      <option value="DELIVERED">Delivered</option>
+                      <option value="CANCELLED">Cancelled</option>
+                    </select>
+                    <button className="p-2 text-gray-400 hover:bg-gray-50 hover:text-blue-500 rounded-xl transition">
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between md:justify-end gap-4 md:gap-8 border-t md:border-t-0 pt-4 md:pt-0">
-                <div className="text-left md:text-right">
-                  <p className="text-lg font-bold text-gray-800">${order.totalPrice}</p>
-                  <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString()}</p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <select
-                    value={order.status}
-                    onChange={(e) => updateStatus(order.id, e.target.value)}
-                    className="px-3 py-2 border border-gray-200 rounded-lg text-xs md:text-sm outline-none focus:ring-1 focus:ring-primary bg-gray-50 font-medium cursor-pointer"
-                  >
-                    <option value="PENDING">Pending</option>
-                    <option value="PREPARING">Preparing</option>
-                    <option value="COOKING">Cooking</option>
-                    <option value="PACKING">Packing</option>
-                    <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                    <option value="DELIVERED">Delivered</option>
-                    <option value="CANCELLED">Cancelled</option>
-                  </select>
-
-                  <button className="p-2 text-gray-400 hover:bg-gray-50 rounded-lg transition">
-                    <Eye className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )))}
+            );
+          })
+        )}
       </div>
     </div>
   );

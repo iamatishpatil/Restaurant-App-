@@ -8,36 +8,55 @@ import {
   TrendingUp, 
   ShoppingBag, 
   Users, 
-  DollarSign,
+  IndianRupee,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  RefreshCw
 } from 'lucide-react';
+import { formatINR } from '../utils/formatCurrency';
 
 const defaultData = [
-  { name: 'Mon', revenue: 4000, orders: 24 },
-  { name: 'Tue', revenue: 3000, orders: 13 },
-  { name: 'Wed', revenue: 2000, orders: 98 },
-  { name: 'Thu', revenue: 2780, orders: 39 },
-  { name: 'Fri', revenue: 1890, orders: 48 },
-  { name: 'Sat', revenue: 2390, orders: 38 },
-  { name: 'Sun', revenue: 3490, orders: 43 },
+  { name: 'Mon', revenue: 14000, orders: 24 },
+  { name: 'Tue', revenue: 23000, orders: 38 },
+  { name: 'Wed', revenue: 18000, orders: 29 },
+  { name: 'Thu', revenue: 27800, orders: 45 },
+  { name: 'Fri', revenue: 31890, orders: 58 },
+  { name: 'Sat', revenue: 42390, orders: 72 },
+  { name: 'Sun', revenue: 38490, orders: 63 },
 ];
 
-const StatCard = ({ title, value, icon: Icon, trend, color }: any) => (
-  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`p-3 rounded-lg ${color} bg-opacity-10 text-${color}`}>
-        <Icon className="h-6 w-6" />
+const StatCard = ({ title, value, icon: Icon, trend, gradient, iconBg }: any) => (
+  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 relative overflow-hidden">
+    <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-5 -translate-y-6 translate-x-6" style={{ background: gradient }} />
+    <div className="flex justify-between items-start mb-5">
+      <div className="p-3 rounded-xl" style={{ background: iconBg }}>
+        <Icon className="h-5 w-5 text-white" />
       </div>
-      <div className={`flex items-center text-xs font-semibold ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
+      <div className={`flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-full ${trend > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
         {trend > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
         {Math.abs(trend)}%
       </div>
     </div>
-    <h3 className="text-gray-500 text-sm font-medium">{title}</h3>
-    <p className="text-2xl font-bold text-gray-800">{value}</p>
+    <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>
+    <p className="text-2xl font-extrabold text-gray-900 tracking-tight">{value}</p>
   </div>
 );
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm">
+        <p className="font-semibold text-gray-300 mb-1">{label}</p>
+        {payload.map((p: any) => (
+          <p key={p.dataKey} style={{ color: p.color }}>
+            {p.dataKey === 'revenue' ? formatINR(p.value) : `${p.value} orders`}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 const DashboardPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -70,59 +89,92 @@ const DashboardPage = () => {
 
   if (isLoading && analytics.totalRevenue === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-40">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-        <p className="text-gray-500 font-medium">Loading analytics...</p>
+      <div className="flex flex-col items-center justify-center py-40 gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500" />
+        <p className="text-gray-400 font-medium text-sm">Loading analytics...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
-        <p className="text-gray-500">Welcome back, let's see how the restaurant is doing today.</p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-gray-400 text-sm mt-1">Here's what's happening at your restaurant today.</p>
+        </div>
+        <button
+          onClick={fetchAnalytics}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:border-red-300 hover:text-red-500 transition shadow-sm"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Revenue" value={`₹${analytics.totalRevenue.toFixed(2)}`} icon={DollarSign} trend={12.5} color="green-600" />
-        <StatCard title="Active Orders" value={analytics.activeOrders} icon={ShoppingBag} trend={8.2} color="blue-600" />
-        <StatCard title="New Customers" value={analytics.newCustomers} icon={Users} trend={-3.1} color="purple-600" />
-        <StatCard title="Order Growth" value={`${analytics.orderGrowth}%`} icon={TrendingUp} trend={4.5} color="orange-600" />
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StatCard title="Total Revenue" value={formatINR(analytics.totalRevenue)} icon={IndianRupee} trend={12.5} gradient="linear-gradient(135deg,#22c55e,#16a34a)" iconBg="linear-gradient(135deg,#22c55e,#16a34a)" />
+        <StatCard title="Active Orders" value={analytics.activeOrders} icon={ShoppingBag} trend={8.2} gradient="linear-gradient(135deg,#3b82f6,#2563eb)" iconBg="linear-gradient(135deg,#3b82f6,#2563eb)" />
+        <StatCard title="New Customers" value={analytics.newCustomers} icon={Users} trend={-3.1} gradient="linear-gradient(135deg,#a855f7,#7c3aed)" iconBg="linear-gradient(135deg,#a855f7,#7c3aed)" />
+        <StatCard title="Order Growth" value={`${analytics.orderGrowth}%`} icon={TrendingUp} trend={4.5} gradient="linear-gradient(135deg,#f97316,#ea580c)" iconBg="linear-gradient(135deg,#f97316,#ea580c)" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800 mb-6">Revenue Analytics</h2>
-          <div className="h-80">
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Revenue Analytics</h2>
+              <p className="text-xs text-gray-400">Week-over-week in INR</p>
+            </div>
+            <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs font-bold">+12.5%</span>
+          </div>
+          <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={analytics.chartData}>
+              <AreaChart data={analytics.chartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ff4d4d" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#ff4d4d" stopOpacity={0.15}/>
                     <stop offset="95%" stopColor="#ff4d4d" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Area type="monotone" dataKey="revenue" stroke="#ff4d4d" fillOpacity={1} fill="url(#colorRev)" strokeWidth={2} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 11 }} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="revenue" stroke="#ff4d4d" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800 mb-6">Order Volume</h2>
-          <div className="h-80">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Order Volume</h2>
+              <p className="text-xs text-gray-400">Daily order count this week</p>
+            </div>
+            <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold">+8.2%</span>
+          </div>
+          <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9CA3AF'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9CA3AF'}} />
-                <Tooltip cursor={{fill: '#F3F4F6'}} />
-                <Bar dataKey="orders" fill="#333" radius={[4, 4, 0, 0]} />
+              <BarChart data={analytics.chartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc', radius: 8 }} />
+                <Bar dataKey="orders" radius={[6, 6, 0, 0]}
+                  fill="url(#barGradient)"
+                >
+                  <defs>
+                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" />
+                      <stop offset="100%" stopColor="#1d4ed8" />
+                    </linearGradient>
+                  </defs>
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>

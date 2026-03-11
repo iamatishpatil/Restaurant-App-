@@ -4,7 +4,9 @@ import bcrypt from 'bcryptjs';
 
 export const getStaff = async (req: Request, res: Response) => {
   try {
-    const staff = await prisma.staff.findMany();
+    const staff = await prisma.staff.findMany({
+      orderBy: { name: 'asc' }
+    });
     res.json(staff);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -32,7 +34,7 @@ export const updateStaff = async (req: Request, res: Response) => {
       data.password = await bcrypt.hash(password, 10);
     }
     const staff = await prisma.staff.update({
-      where: { id },
+      where: { id: id as string },
       data
     });
     res.json(staff);
@@ -44,7 +46,7 @@ export const updateStaff = async (req: Request, res: Response) => {
 export const deleteStaff = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await prisma.staff.delete({ where: { id } });
+    await prisma.staff.delete({ where: { id: id as string } });
     res.json({ message: "Staff deleted successfully" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -53,7 +55,9 @@ export const deleteStaff = async (req: Request, res: Response) => {
 
 export const getInventory = async (req: Request, res: Response) => {
   try {
-    const inventory = await prisma.inventory.findMany();
+    const inventory = await prisma.inventory.findMany({
+      orderBy: { itemName: 'asc' }
+    });
     res.json(inventory);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -65,7 +69,7 @@ export const updateInventory = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { quantity } = req.body;
     const item = await prisma.inventory.update({
-      where: { id },
+      where: { id: id as string },
       data: { quantity }
     });
     res.json(item);
@@ -89,7 +93,7 @@ export const createInventory = async (req: Request, res: Response) => {
 export const deleteInventory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await prisma.inventory.delete({ where: { id } });
+    await prisma.inventory.delete({ where: { id: id as string } });
     res.json({ message: "Inventory item deleted successfully" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });

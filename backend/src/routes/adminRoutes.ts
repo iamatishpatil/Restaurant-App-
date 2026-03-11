@@ -3,7 +3,7 @@ import {
   getCategories, createCategory, updateCategory, deleteCategory,
   getCoupons, createCoupon, updateCoupon, deleteCoupon,
   getBanners, createBanner, updateBanner, deleteBanner,
-  getAnalytics, getSettings, updateSettings
+  getAnalytics, getSettings, updateSettings, getNotifications
 } from '../controllers/adminController';
 import { getStaff, createStaff, updateStaff, deleteStaff, getInventory, updateInventory, createInventory, deleteInventory, getUsers } from '../controllers/adminManagementController';
 import { getMenuItems, createMenuItem, updateMenuItem, deleteMenuItem } from '../controllers/menuController';
@@ -34,6 +34,8 @@ router.put('/banners/:id', authenticate, authorize('ADMIN', 'MANAGER'), updateBa
 router.delete('/banners/:id', authenticate, authorize('ADMIN', 'MANAGER'), deleteBanner);
 
 router.get('/analytics', authenticate, authorize('ADMIN', 'MANAGER'), getAnalytics);
+
+router.get('/notifications', authenticate, authorize('ADMIN', 'MANAGER'), getNotifications);
 
 router.get('/settings', authenticate, authorize('ADMIN', 'MANAGER'), getSettings);
 router.put('/settings', authenticate, authorize('ADMIN', 'MANAGER'), updateSettings);

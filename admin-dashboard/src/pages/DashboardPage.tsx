@@ -14,6 +14,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { formatINR } from '../utils/formatCurrency';
+import { getImageUrl, onImageError } from '../utils/imageUtils';
 
 const defaultData = [
   { name: 'Mon', revenue: 14000, orders: 24 },
@@ -60,16 +61,22 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 const DashboardPage = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [analytics, setAnalytics] = useState({
+  const [analytics, setAnalytics] = useState<any>({
     totalRevenue: 0,
     activeOrders: 0,
     newCustomers: 0,
     orderGrowth: 0,
-    chartData: defaultData
+    chartData: defaultData,
+    topSelling: [],
+    lowSelling: [],
+    topRated: []
   });
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
   useEffect(() => {
     fetchAnalytics();
+    const interval = setInterval(fetchAnalytics, 30000); // Poll every 30 seconds
+    return () => clearInterval(interval);
   }, []);
 
   const fetchAnalytics = async () => {
@@ -80,6 +87,7 @@ const DashboardPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAnalytics(res.data);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error(err);
     } finally {
@@ -96,21 +104,67 @@ const DashboardPage = () => {
     );
   }
 
+  const PerformanceCard = ({ title, items, type }: { title: string, items: any[], type: 'sales' | 'rating' }) => (
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
+      <h2 className="text-base font-bold text-gray-900 mb-4">{title}</h2>
+      <div className="space-y-4">
+        {items.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4 text-center">No data available</p>
+        ) : items.map((item, idx) => (
+          <div key={idx} className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gray-50 flex-shrink-0 overflow-hidden border border-gray-100">
+              <img 
+                src={getImageUrl(item.image)} 
+                onError={onImageError} 
+                alt={item.name} 
+                className="w-full h-full object-cover" 
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-800 truncate">{item.name}</p>
+              <div className="w-full bg-gray-100 h-1.5 rounded-full mt-1">
+                <div 
+                  className={`h-full rounded-full ${type === 'sales' ? (title.includes('Top') ? 'bg-green-500' : 'bg-orange-400') : 'bg-yellow-400'}`} 
+                  style={{ width: `${type === 'sales' ? Math.min(100, (item.sales / (items[0]?.sales || 1)) * 100) : (item.rating / 5) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-sm font-bold text-gray-900">
+                {type === 'sales' ? `${item.sales} sold` : `${item.rating} ★`}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Dashboard</h1>
-          <p className="text-gray-400 text-sm mt-1">Here's what's happening at your restaurant today.</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-400 text-sm">Here's what's happening at your restaurant today.</p>
+            <span className="flex items-center gap-1.5 px-2 py-0.5 bg-green-50 text-green-600 rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse border border-green-100">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Livereal-time
+            </span>
+          </div>
         </div>
-        <button
-          onClick={fetchAnalytics}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:border-red-300 hover:text-red-500 transition shadow-sm"
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-4">
+          <p className="hidden sm:block text-[11px] font-medium text-gray-400">
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </p>
+          <button
+            onClick={fetchAnalytics}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:border-red-300 hover:text-red-500 transition shadow-sm"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Stat Cards */}
@@ -119,6 +173,13 @@ const DashboardPage = () => {
         <StatCard title="Active Orders" value={analytics.activeOrders} icon={ShoppingBag} trend={8.2} gradient="linear-gradient(135deg,#3b82f6,#2563eb)" iconBg="linear-gradient(135deg,#3b82f6,#2563eb)" />
         <StatCard title="New Customers" value={analytics.newCustomers} icon={Users} trend={-3.1} gradient="linear-gradient(135deg,#a855f7,#7c3aed)" iconBg="linear-gradient(135deg,#a855f7,#7c3aed)" />
         <StatCard title="Order Growth" value={`${analytics.orderGrowth}%`} icon={TrendingUp} trend={4.5} gradient="linear-gradient(135deg,#f97316,#ea580c)" iconBg="linear-gradient(135deg,#f97316,#ea580c)" />
+      </div>
+
+      {/* Performance Insights */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <PerformanceCard title="Top Selling Items" items={analytics.topSelling || []} type="sales" />
+        <PerformanceCard title="Low Performing (Needs Attention)" items={analytics.lowSelling || []} type="sales" />
+        <PerformanceCard title="Top Rated by Customers" items={analytics.topRated || []} type="rating" />
       </div>
 
       {/* Charts */}

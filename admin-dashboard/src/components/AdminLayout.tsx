@@ -1,12 +1,44 @@
 import Sidebar from '../components/Sidebar';
-import { Outlet } from 'react-router-dom';
-import { Bell, Search, Menu } from 'lucide-react';
+import { Outlet, Link } from 'react-router-dom';
+import { Bell, Search, Menu, Clock, ExternalLink, ClipboardList } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 
 const AdminLayout = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 15000); // Poll every 15 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('http://localhost:5000/api/admin/notifications', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(res.data);
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    }
+  };
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
@@ -43,10 +75,67 @@ const AdminLayout = () => {
             </div>
 
             {/* Bell */}
-            <button className="relative p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 rounded-xl transition">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full border-2 border-white animate-pulse" />
-            </button>
+            <div className="relative" ref={dropdownRef}>
+              <button 
+                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                className={`relative p-2 rounded-xl transition ${isNotifOpen ? 'bg-red-50 text-red-500' : 'text-gray-500 hover:bg-gray-100'}`}
+              >
+                <Bell className="h-5 w-5" />
+                {notifications.length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+                )}
+              </button>
+
+              {/* Dropdown */}
+              {isNotifOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-gray-50 flex items-center justify-between">
+                    <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
+                    <span className="bg-red-50 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded-full">{notifications.length || 0} New</span>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center">
+                        <Bell className="h-8 w-8 text-gray-200 mx-auto mb-2" />
+                        <p className="text-gray-400 text-xs font-medium">All caught up!</p>
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div key={notif.id} className="px-4 py-3 hover:bg-gray-50 transition border-b border-gray-50 last:border-0 group">
+                          <div className="flex gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0">
+                              <ClipboardList className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-gray-900 truncate">New Order Received!</p>
+                              <p className="text-[11px] text-gray-500 mt-0.5">By {notif.user?.name || 'Customer'}</p>
+                              <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">
+                                <Clock className="h-3 w-3" />
+                                {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                            <Link 
+                              to={`/orders`} 
+                              onClick={() => setIsNotifOpen(false)}
+                              className="self-center p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded-lg opacity-0 group-hover:opacity-100 transition shadow-sm border border-transparent hover:border-red-100"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </Link>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <Link 
+                    to="/orders" 
+                    onClick={() => setIsNotifOpen(false)}
+                    className="block text-center py-2.5 text-[11px] font-bold text-gray-500 hover:text-red-500 hover:bg-red-50 transition bg-gray-50/50"
+                  >
+                    View All Orders
+                  </Link>
+                </div>
+              )}
+            </div>
 
             {/* Divider */}
             <div className="h-8 w-px bg-gray-200" />

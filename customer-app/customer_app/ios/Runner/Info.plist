@@ -44,6 +44,7 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to location when open to show nearby restaurants and deliver food to your doorstep.</string>
 </dict>
 </plist>

@@ -61,7 +61,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                          backgroundColor: Colors.green,
                        )
                      );
-                     Navigator.pop(context, true); // Return success
+                     Navigator.pop(context, _selectedMethod); // Return selected method
                    });
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF4D4D)),

@@ -12,14 +12,26 @@ const orderSchema = z.object({
   totalPrice: z.number(),
   deliveryType: z.enum(["DELIVERY", "PICKUP"]),
   addressId: z.string().optional(),
+  paymentMethod: z.enum(["UPI", "CARD", "COD"]).default("UPI"),
 });
 
 export const createOrder = async (req: any, res: Response) => {
   try {
-    const { items, totalPrice, deliveryType, addressId } = orderSchema.parse(req.body);
+    const { items, totalPrice, deliveryType, addressId, paymentMethod } = orderSchema.parse(req.body);
     const userId = req.user.id;
 
     const order = await prisma.$transaction(async (tx) => {
+      // 1. Create Payment record first
+      const payment = await tx.payment.create({
+        data: {
+          method: paymentMethod as string,
+          status: paymentMethod === "COD" ? "PENDING" : "COMPLETED",
+          amount: totalPrice,
+          transactionId: paymentMethod === "COD" ? null : `TXN_${Date.now()}`,
+        }
+      });
+
+      // 2. Create Order linked to Payment
       const newOrder = await tx.order.create({
         data: {
           userId,
@@ -28,6 +40,7 @@ export const createOrder = async (req: any, res: Response) => {
           deliveryType,
           addressId: deliveryType === "DELIVERY" ? addressId : null,
           status: "PENDING",
+          paymentId: payment.id,
           orderItems: {
             create: items.map((item: any) => ({
               menuItemId: item.menuItemId,
@@ -36,7 +49,7 @@ export const createOrder = async (req: any, res: Response) => {
             })),
           },
         },
-        include: { orderItems: true },
+        include: { orderItems: true, payment: true },
       });
       return newOrder;
     });
@@ -62,7 +75,7 @@ export const getMyOrders = async (req: any, res: Response) => {
 
 export const getOrderById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const order = await prisma.order.findUnique({
       where: { id },
       include: { 
@@ -80,7 +93,7 @@ export const getOrderById = async (req: Request, res: Response) => {
 
 export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { status } = req.body;
     const order = await prisma.order.update({
       where: { id },
@@ -101,7 +114,16 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 export const getAllOrders = async (req: Request, res: Response) => {
   try {
     const orders = await prisma.order.findMany({
-      include: { user: true, orderItems: true, address: true },
+      include: { 
+        user: true, 
+        address: true,
+        payment: true,
+        orderItems: {
+          include: {
+            menuItem: true
+          }
+        }
+      },
       orderBy: { createdAt: "desc" },
     });
     res.json(orders);

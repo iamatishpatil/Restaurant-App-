@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../utils/constants.dart';
 
 class CravyoCategoryItem extends StatelessWidget {
@@ -21,63 +22,66 @@ class CravyoCategoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Generate a soft background color based on ID for a playful look
+    final List<Color> softColors = [
+      const Color(0xFFFF5252).withOpacity(0.12), // Vibrant Red
+      const Color(0xFFFF9100).withOpacity(0.12), // Vibrant Orange
+      const Color(0xFF00C853).withOpacity(0.12), // Vibrant Green
+      const Color(0xFF2979FF).withOpacity(0.12), // Vibrant Blue
+      const Color(0xFFD500F9).withOpacity(0.12), // Vibrant Purple
+    ];
+    final Color bgColor = softColors[id.hashCode % softColors.length];
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 80,
-        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.s, vertical: AppSpacing.s),
+        width: 80, // Slightly wider
+        margin: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(
           children: [
             AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              padding: const EdgeInsets.all(AppSpacing.m),
+              duration: AppAnimations.normal,
+              curve: Curves.easeOutQuart,
+              height: 68,
+              width: 68,
+              padding: const EdgeInsets.all(AppSpacing.small),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.white,
-                shape: BoxShape.circle,
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        )
-                      ]
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 5,
-                          offset: const Offset(0, 2),
-                        )
-                      ],
+                color: isSelected ? AppColors.primary : bgColor,
+                borderRadius: BorderRadius.circular(22), // Premium squircle look
+                boxShadow: isSelected ? AppShadows.premiumShadow : [],
               ),
-              child: imageUrl != null && imageUrl!.isNotEmpty
-                  ? Image.network(
-                      imageUrl!,
-                      height: 32,
-                      width: 32,
-                      errorBuilder: (c, e, s) => Icon(
+              child: Center(
+                child: imageUrl != null && imageUrl!.isNotEmpty
+                    ? Image.network(
+                        imageUrl!,
+                        height: 38,
+                        width: 38,
+                        fit: BoxFit.contain,
+                        errorBuilder: (c, e, s) => Icon(
+                          icon,
+                          color: isSelected ? AppColors.white : AppColors.primary,
+                          size: 30,
+                        ),
+                      )
+                    : Icon(
                         icon,
-                        color: isSelected ? AppColors.white : AppColors.textSecondary,
-                        size: 24,
+                        color: isSelected ? AppColors.white : AppColors.primary,
+                        size: 30,
                       ),
-                    )
-                  : Icon(
-                      icon,
-                      color: isSelected ? AppColors.white : AppColors.textSecondary,
-                      size: 24,
-                    ),
+              ),
             ),
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: 10),
             Text(
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? AppColors.primary : AppColors.text,
-                    fontSize: 12,
-                  ),
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                fontSize: 12.5,
+                letterSpacing: -0.1,
+              ),
             )
           ],
         ),

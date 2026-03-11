@@ -5,6 +5,7 @@ export const getCategories = async (req: Request, res: Response) => {
   try {
     const categories = await prisma.category.findMany({
       include: { items: true },
+      orderBy: { name: 'asc' }
     });
     res.json(categories);
   } catch (error: any) {
@@ -18,6 +19,7 @@ export const getMenuItems = async (req: Request, res: Response) => {
     const items = await prisma.menuItem.findMany({
       where: categoryId ? { categoryId: String(categoryId) } : {},
       include: { category: true },
+      orderBy: { name: 'asc' }
     });
     res.json(items);
   } catch (error: any) {
@@ -29,7 +31,7 @@ export const getMenuItemById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const item = await prisma.menuItem.findUnique({
-      where: { id },
+      where: { id: id as string },
       include: { category: true },
     });
     if (!item) return res.status(404).json({ message: "Item not found" });
@@ -56,7 +58,7 @@ export const updateMenuItem = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, description, price, categoryId, isVeg, image, isAvailable } = req.body;
     const item = await prisma.menuItem.update({
-      where: { id },
+      where: { id: id as string },
       data: { name, description, price, categoryId, isVeg, image, isAvailable },
     });
     res.json(item);
@@ -68,7 +70,7 @@ export const updateMenuItem = async (req: Request, res: Response) => {
 export const deleteMenuItem = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await prisma.menuItem.delete({ where: { id } });
+    await prisma.menuItem.delete({ where: { id: id as string } });
     res.json({ message: "Item deleted successfully" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });

@@ -12,6 +12,10 @@ import '../widgets/search_bar.dart';
 import '../widgets/banner_widget.dart';
 import '../widgets/shimmer_widget.dart';
 import '../utils/constants.dart';
+import '../providers/location_provider.dart';
+import '../widgets/location_selector_sheet.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,6 +36,24 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final location = Provider.of<LocationProvider>(context, listen: false);
+      
+      // Auto-detect live location on first load
+      if (!location.isLocationSet) {
+        location.determinePosition().then((_) {
+          // If after detection it's still not set (e.g. failed), show picker
+          if (!location.isLocationSet && mounted) {
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.transparent,
+              isScrollControlled: true,
+              builder: (context) => const LocationSelectorSheet(),
+            );
+          }
+        });
+      }
+    });
     _fetchInitialData();
   }
 
@@ -88,138 +110,176 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Deliver to', style: Theme.of(context).textTheme.bodySmall),
-            Row(
+        title: Consumer<LocationProvider>(
+          builder: (context, location, _) => GestureDetector(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Colors.transparent,
+                isScrollControlled: true,
+                builder: (context) => const LocationSelectorSheet(),
+              );
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Current Location', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primary, size: 20),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      'DELIVERING TO',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textSecondary,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary, size: 16),
+                  ],
+                ),
+                Text(
+                  location.currentAddress, 
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.text,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
-          ],
+          ),
         ),
         elevation: 0,
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.text,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Theme.of(context).scaffoldBackgroundColor,
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.black.withOpacity(0.05)),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.notifications_none_rounded, color: AppColors.text),
-              onPressed: () {},
+          GestureDetector(
+            onTap: () {},
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              margin: const EdgeInsets.only(right: 16),
+              decoration: BoxDecoration(
+                color: AppColors.surface1,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.surface3.withOpacity(0.5)),
+              ),
+              child: const Icon(Icons.notifications_none_rounded, color: AppColors.text, size: 22),
             ),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _fetchInitialData,
-        color: AppColors.primary,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Search Bar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-                child: CravyoSearchBar(
-                  onChanged: (val) {
-                    setState(() {
-                      _items = _allItems.where((item) => item.name.toLowerCase().contains(val.toLowerCase())).toList();
-                    });
-                  },
-                ),
-              ),
-
-              if (_isLoading) _buildShimmerLoading() else ...[
-                // Banners Carousel
-                if (_banners.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  CarouselSlider.builder(
-                    itemCount: _banners.length,
-                    itemBuilder: (context, index, realIndex) {
-                      final banner = _banners[index];
-                      return CravyoBanner(title: banner['title'], imageUrl: banner['image']);
-                    },
-                    options: CarouselOptions(
-                      height: 190,
-                      viewportFraction: 1.0,
-                      autoPlay: true,
-                      enlargeCenterPage: false,
-                      onPageChanged: (index, reason) => setState(() => _bannerIndex = index),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: AnimatedIndicator(
-                      activeIndex: _bannerIndex,
-                      count: _banners.length,
-                    ),
-                  ),
-                ],
-
-                // Categories
-                _buildSectionHeader('Categories', onSeeAll: () {}),
-                SizedBox(
-                  height: 110,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    itemCount: _categories.length + 1,
-                    itemBuilder: (ctx, i) {
-                      if (i == 0) {
-                        return CravyoCategoryItem(
-                          id: 'ALL',
-                          name: 'All',
-                          icon: Icons.restaurant_menu_rounded,
-                          isSelected: _selectedCategoryId == 'ALL',
-                          onTap: () => _fetchFilteredItems('ALL'),
-                        );
-                      }
-                      final cat = _categories[i - 1];
-                      return CravyoCategoryItem(
-                        id: cat['id'],
-                        name: cat['name'],
-                        icon: Icons.fastfood_rounded,
-                        imageUrl: cat['image'],
-                        isSelected: _selectedCategoryId == cat['id'],
-                        onTap: () => _fetchFilteredItems(cat['id']),
-                      );
+      body: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+        ),
+        child: RefreshIndicator(
+          onRefresh: _fetchInitialData,
+          color: AppColors.primary,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Search Bar Section
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: CravyoSearchBar(
+                    onChanged: (val) {
+                      setState(() {
+                        _items = _allItems.where((item) => item.name.toLowerCase().contains(val.toLowerCase())).toList();
+                      });
                     },
                   ),
-                ),
-
-                _buildSectionHeader('Popular Near You'),
-
-                _items.isEmpty 
-                ? _buildEmptyState()
-                : Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.78,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
+                ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1, end: 0),
+  
+                if (_isLoading) _buildShimmerLoading() else ...[
+                  // Banners Carousel
+                  if (_banners.isNotEmpty) ...[
+                    CarouselSlider.builder(
+                      itemCount: _banners.length,
+                      itemBuilder: (context, index, realIndex) {
+                        final banner = _banners[index];
+                        return CravyoBanner(title: banner['title'], imageUrl: banner['image']);
+                      },
+                      options: CarouselOptions(
+                        height: 220, // Taller for premium
+                        viewportFraction: 1.0,
+                        autoPlay: true,
+                        autoPlayCurve: Curves.fastOutSlowIn,
+                        autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                        onPageChanged: (index, reason) => setState(() => _bannerIndex = index),
                       ),
-                      itemCount: _items.length,
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: AnimatedIndicator(
+                        activeIndex: _bannerIndex,
+                        count: _banners.length,
+                      ),
+                    ),
+                  ],
+  
+                  // Categories
+                  const SizedBox(height: 8),
+                  _buildSectionHeader('What\'s on your mind?', onSeeAll: () {}),
+                  SizedBox(
+                    height: 110,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: _categories.length + 1,
                       itemBuilder: (ctx, i) {
-                        return CravyoFoodCard(item: _items[i]);
+                        if (i == 0) {
+                          return CravyoCategoryItem(
+                            id: 'ALL',
+                            name: 'All',
+                            icon: Icons.restaurant_menu_rounded,
+                            isSelected: _selectedCategoryId == 'ALL',
+                            onTap: () => _fetchFilteredItems('ALL'),
+                          );
+                        }
+                        final cat = _categories[i - 1];
+                        return CravyoCategoryItem(
+                          id: cat['id'],
+                          name: cat['name'],
+                          icon: Icons.fastfood_rounded,
+                          imageUrl: cat['image'],
+                          isSelected: _selectedCategoryId == cat['id'],
+                          onTap: () => _fetchFilteredItems(cat['id']),
+                        );
                       },
                     ),
-                  ),
+                  ).animate().fadeIn(delay: 200.ms),
+  
+                  _buildSectionHeader('Popular Dishes'),
+  
+                  _items.isEmpty 
+                  ? _buildEmptyState()
+                  : GridView.builder(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.68,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
+                        itemCount: _items.length,
+                        itemBuilder: (ctx, i) {
+                          return CravyoFoodCard(item: _items[i]);
+                        },
+                      ),
+                ],
+                const SizedBox(height: 100),
               ],
-              const SizedBox(height: 100),
-            ],
+            ),
           ),
         ),
       ),
@@ -257,8 +317,8 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
-              child: Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
+              decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3), shape: BoxShape.circle),
+              child: Icon(Icons.search_off_rounded, size: 48, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
             ),
             const SizedBox(height: 20),
             Text('No dishes found', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
@@ -288,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.8, crossAxisSpacing: 16, mainAxisSpacing: 16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.68, crossAxisSpacing: 16, mainAxisSpacing: 16),
             itemCount: 4,
             itemBuilder: (_, __) => const CravyoShimmer(width: double.infinity, height: 200, borderRadius: AppRadius.xl),
           ),
@@ -313,11 +373,11 @@ class AnimatedIndicator extends StatelessWidget {
     return AnimatedSmoothIndicator(
       activeIndex: activeIndex,
       count: count,
-      effect: const ExpandingDotsEffect(
+      effect: ExpandingDotsEffect(
         dotHeight: 6,
         dotWidth: 6,
         activeDotColor: AppColors.primary,
-        dotColor: Colors.black12,
+        dotColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
         expansionFactor: 4,
         spacing: 4,
       ),

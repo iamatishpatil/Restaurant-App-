@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/constants.dart';
@@ -6,6 +8,7 @@ import 'login_screen.dart';
 import 'orders_screen.dart';
 import 'address_screen.dart';
 import 'support_screen.dart';
+import '../providers/theme_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -16,11 +19,15 @@ class ProfileScreen extends StatelessWidget {
     final user = auth.user;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Profile', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        title: Text(
+          'Profile',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface, fontSize: 20),
+        ),
         centerTitle: true,
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -29,29 +36,33 @@ class ProfileScreen extends StatelessWidget {
             ? _buildLoginPrompt(context)
             : Column(
                 children: [
-                  const SizedBox(height: AppSpacing.xl),
-                  _buildProfileHeader(context, auth, user),
                   const SizedBox(height: 32),
+                  _buildProfileHeader(context, auth, user).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0),
+                  const SizedBox(height: 48),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       children: [
                         _buildProfileCard([
-                          _buildProfileTile(context, Icons.location_on_rounded, 'My Addresses', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressScreen()))),
+                          _buildProfileTile(context, Icons.location_on_rounded, 'Delivery Addresses', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressScreen()))),
                           _buildProfileTile(context, Icons.history_rounded, 'Order History', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()))),
                         ]),
-                        const SizedBox(height: AppSpacing.l),
+                        const SizedBox(height: 16),
                         _buildProfileCard([
-                          _buildProfileTile(context, Icons.help_outline_rounded, 'Help & Support', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()))),
-                          _buildProfileTile(context, Icons.privacy_tip_outlined, 'Privacy Policy', () {}),
+                          _buildThemeToggle(context),
                         ]),
-                        const SizedBox(height: AppSpacing.l),
+                        const SizedBox(height: 16),
                         _buildProfileCard([
-                          _buildProfileTile(context, Icons.logout_rounded, 'Logout', () => _showLogoutConfirmation(context, auth), color: Colors.red),
+                          _buildProfileTile(context, Icons.support_agent_rounded, 'Help & Support', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()))),
+                          _buildProfileTile(context, Icons.security_rounded, 'Privacy & Safety', () {}),
+                        ]),
+                        const SizedBox(height: 16),
+                        _buildProfileCard([
+                          _buildProfileTile(context, Icons.logout_rounded, 'Logout Account', () => _showLogoutConfirmation(context, auth), color: AppColors.primary),
                         ]),
                       ],
                     ),
-                  ),
+                  ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
                   const SizedBox(height: 120),
                 ],
               ),
@@ -62,23 +73,42 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildLoginPrompt(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xxl),
+        padding: const EdgeInsets.symmetric(horizontal: 40),
         child: Column(
           children: [
-            const SizedBox(height: 60),
+            const SizedBox(height: 100),
             Container(
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(color: AppColors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)]),
-              child: Icon(Icons.person_outline_rounded, size: 64, color: AppColors.primary.withOpacity(0.2)),
-            ),
-            const SizedBox(height: 32),
-            Text('Join Cravyo Today', style: Theme.of(context).textTheme.displaySmall),
-            const SizedBox(height: 12),
-            Text('Login to save your addresses and track orders', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary)),
+              height: 140,
+              width: 140,
+              decoration: BoxDecoration(
+                color: AppColors.surface1,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.person_3_outlined, size: 60, color: AppColors.primary.withOpacity(0.3)),
+            ).animate().scale(duration: 600.ms, curve: Curves.bounceOut),
             const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-              child: const Text('LOGIN TO YOUR ACCOUNT'),
+            Text(
+              'Join the Culinary Community',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.text),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Login to manage your orders, save addresses\nand unlock exclusive dining rewards.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+            ),
+            const SizedBox(height: 48),
+            SizedBox(
+              width: double.infinity,
+              height: 60,
+              child: ElevatedButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('LOGIN TO YOUR ACCOUNT'),
+              ),
             ),
           ],
         ),
@@ -93,55 +123,127 @@ class ProfileScreen extends StatelessWidget {
           alignment: Alignment.bottomRight,
           children: [
             Container(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primary.withOpacity(0.1), width: 4),
+                border: Border.all(color: AppColors.primary.withOpacity(0.12), width: 4),
               ),
               child: CircleAvatar(
-                radius: 60,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                radius: 56,
+                backgroundColor: AppColors.surface1,
                 child: const Icon(Icons.person_rounded, size: 60, color: AppColors.primary),
               ),
             ),
             GestureDetector(
               onTap: () => _showEditDialog(context, auth, user),
               child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(color: AppColors.text, shape: BoxShape.circle),
-                child: const Icon(Icons.edit_rounded, size: 18, color: Colors.white),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.text, 
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 3),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))
+                  ],
+                ),
+                child: const Icon(Icons.edit_rounded, size: 16, color: Colors.white),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        Text(user.name, style: Theme.of(context).textTheme.displaySmall?.copyWith(fontSize: 24)),
-        Text(user.email ?? user.phone ?? '', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+        const SizedBox(height: 20),
+        Text(
+          user.name, 
+          style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          user.email ?? user.phone ?? 'Member since 2024', 
+          style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+        ),
       ],
     );
   }
 
-  Widget _buildProfileCard(List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+  Widget _buildThemeToggle(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.08), 
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(
+          themeProvider.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded, 
+          color: AppColors.primary, 
+          size: 22
+        ),
       ),
-      child: Column(children: children),
+      title: Text(
+        'Appearance', 
+        style: GoogleFonts.poppins(
+          color: Theme.of(context).colorScheme.onSurface, 
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
+        ),
+      ),
+      subtitle: Text(
+        themeProvider.isDarkMode ? 'Dark Mode Active' : 'Light Mode Active',
+        style: GoogleFonts.poppins(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+      ),
+      trailing: Switch.adaptive(
+        value: themeProvider.isDarkMode, 
+        onChanged: (val) => themeProvider.toggleTheme(val),
+        activeColor: AppColors.primary,
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(List<Widget> children) {
+    return Builder(
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(children: children),
+        );
+      }
     );
   }
 
   Widget _buildProfileTile(BuildContext context, IconData icon, String title, VoidCallback onTap, {Color? color}) {
+    final textColor = color ?? Theme.of(context).colorScheme.onSurface;
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: (color ?? AppColors.text).withOpacity(0.05), borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, color: color ?? AppColors.text, size: 22),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: textColor.withOpacity(0.08), 
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(icon, color: textColor, size: 22),
       ),
-      title: Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color ?? AppColors.text, fontWeight: FontWeight.bold)),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textSecondary),
+      title: Text(
+        title, 
+        style: GoogleFonts.poppins(
+          color: textColor, 
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
+        ),
+      ),
+      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textPlaceholder),
       onTap: onTap,
     );
   }
@@ -150,17 +252,21 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        title: Text('Logout', style: GoogleFonts.poppins(fontWeight: FontWeight.w900)),
+        content: Text('Are you sure you want to end your session?', style: GoogleFonts.poppins()),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel', style: GoogleFonts.poppins(color: AppColors.textSecondary))),
+          ElevatedButton(
             onPressed: () {
               auth.logout();
               Navigator.pop(ctx);
             }, 
-            child: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF5252),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Logout', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))
           ),
         ],
       ),
@@ -175,8 +281,8 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
-        title: const Text('Edit Profile'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        title: Text('Edit Profile', style: GoogleFonts.poppins(fontWeight: FontWeight.w900)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -189,17 +295,28 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final success = await auth.updateProfile(nameController.text, emailController.text, phoneController.text);
-              if (success) {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated successfully')));
-              }
-            }, 
-            child: const Text('Save'),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel', style: GoogleFonts.poppins(color: AppColors.textSecondary))),
+          SizedBox(
+            width: 120,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () async {
+                final success = await auth.updateProfile(nameController.text, emailController.text, phoneController.text);
+                if (success) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Profile updated'),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    )
+                  );
+                }
+              }, 
+              child: const Text('Save'),
+            ),
           ),
         ],
       ),
@@ -209,11 +326,16 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildEditField(TextEditingController controller, String label, IconData icon) {
     return TextField(
       controller: controller,
+      style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, size: 20),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.m)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        labelStyle: GoogleFonts.poppins(fontSize: 12, color: AppColors.textSecondary),
+        prefixIcon: Icon(icon, size: 20, color: AppColors.primary),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: AppColors.surface3)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+        filled: true,
+        fillColor: AppColors.surface1,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }

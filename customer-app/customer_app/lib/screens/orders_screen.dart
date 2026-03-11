@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 import '../utils/constants.dart';
 import 'order_tracking_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -24,28 +26,43 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Future<void> _fetchOrders() async {
     try {
+      print('DEBUG: Fetching orders...');
       final response = await ApiService.get('/orders/my');
+      print('DEBUG: Orders response status: ${response.statusCode}');
       if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
         setState(() {
-          _orders = jsonDecode(response.body);
+          _orders = data is List ? data : [];
           _isLoading = false;
         });
+        print('DEBUG: Orders count: ${_orders.length}');
+      } else {
+        setState(() => _isLoading = false);
       }
     } catch (e) {
-      print('Error fetching orders: $e');
-      setState(() => _isLoading = false);
+      print('ERROR [OrdersScreen]: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('My Orders', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        title: Text(
+          'Orders History',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface, fontSize: 20),
+        ),
         centerTitle: true,
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
+        automaticallyImplyLeading: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).colorScheme.onSurface, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: _isLoading 
         ? _buildLoadingState()
@@ -56,11 +73,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
               color: AppColors.primary,
               child: ListView.builder(
                 itemCount: _orders.length,
-                padding: const EdgeInsets.all(AppSpacing.l),
-                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                physics: const BouncingScrollPhysics(),
                 itemBuilder: (ctx, i) {
                   final order = _orders[i];
-                  return _buildOrderCard(order);
+                  return _buildOrderCard(order).animate().fadeIn(delay: (i * 100).ms).slideX(begin: 0.1, end: 0);
                 },
               ),
             ),
@@ -77,20 +94,35 @@ class _OrdersScreenState extends State<OrdersScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(color: AppColors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)]),
-            child: Icon(Icons.receipt_long_rounded, size: 64, color: AppColors.primary.withOpacity(0.2)),
-          ),
-          const SizedBox(height: 24),
-          Text('No orders yet', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text('Your order history will appear here', style: Theme.of(context).textTheme.bodyMedium),
+            height: 140,
+            width: 140,
+            decoration: BoxDecoration(
+              color: AppColors.surface1,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.receipt_long_outlined, size: 60, color: AppColors.primary.withOpacity(0.3)),
+          ).animate().scale(duration: 600.ms, curve: Curves.bounceOut),
           const SizedBox(height: 32),
+          Text(
+            'No orders yet',
+            style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Taste the world! Start by placing\nyour first gourmet order today.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+          ),
+          const SizedBox(height: 48),
           SizedBox(
-            width: 180,
+            width: 220,
+            height: 56,
             child: ElevatedButton(
-              onPressed: _fetchOrders,
-              child: const Text('Refresh'),
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text('Go Back'),
             ),
           ),
         ],
@@ -99,21 +131,34 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Widget _buildOrderCard(dynamic order) {
-    final date = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(order['createdAt']));
-    final status = order['status'].toString().toUpperCase();
+    String date = 'Just now';
+    try {
+      if (order['createdAt'] != null) {
+        date = DateFormat('dd MMM yyyy • hh:mm a').format(DateTime.parse(order['createdAt']));
+      }
+    } catch (_) {}
+
+    final status = (order['status'] ?? 'PENDING').toString().toUpperCase();
     final isDelivered = status == 'DELIVERED';
     final isCancelled = status == 'CANCELLED';
 
-    Color statusColor = Colors.orange;
-    if (isDelivered) statusColor = Colors.green;
-    if (isCancelled) statusColor = Colors.red;
+    Color statusColor = const Color(0xFFFF9100); // Pending/Processing
+    if (isDelivered) statusColor = const Color(0xFF00C853);
+    if (isCancelled) statusColor = const Color(0xFFFF5252);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.l),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: InkWell(
         onTap: () {
@@ -122,56 +167,95 @@ class _OrdersScreenState extends State<OrdersScreen> {
             status: order['status'],
           )));
         },
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.l),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        borderRadius: BorderRadius.circular(24),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Order #${order['id'].toString().substring(0, 8)}', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(date, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
-                    ],
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      isDelivered ? Icons.check_circle_rounded : isCancelled ? Icons.cancel_rounded : Icons.local_shipping_rounded,
+                      color: statusColor,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Order #${order['id'].toString().length > 8 ? order['id'].toString().substring(0, 8).toUpperCase() : order['id'].toString().toUpperCase()}',
+                          style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
+                        ),
+                        Text(date, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textPlaceholder)),
+                      ],
+                    ),
                   ),
                   _buildStatusChip(status, statusColor),
                 ],
               ),
-              const Divider(height: 32),
-              Row(
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(height: 1, color: AppColors.surface3),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Total Amount', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
-                      Text('${AppConstants.currency}${order['totalPrice']}', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      Text(
+                        'TOTAL AMOUNT',
+                        style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.textSecondary, letterSpacing: 0.5),
+                      ),
+                      Text(
+                        '${AppConstants.currency}${order['totalPrice']}',
+                        style: GoogleFonts.poppins(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
+                      ),
                     ],
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => OrderTrackingScreen(
-                        orderId: order['id'].toString(),
-                        status: order['status'],
-                      )));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: statusColor.withOpacity(0.1),
-                      foregroundColor: statusColor,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      minimumSize: const Size(0, 0),
+                  Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface1,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(isDelivered ? 'View Details' : 'Track Order', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => OrderTrackingScreen(
+                          orderId: order['id'].toString(),
+                          status: order['status'],
+                        )));
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text(
+                        isDelivered ? 'View Bill' : 'Track Order',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.primary),
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -179,14 +263,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Widget _buildStatusChip(String status, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppRadius.s),
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Text(
         status,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1),
+        style: GoogleFonts.poppins(
+          color: color, 
+          fontWeight: FontWeight.w800, 
+          fontSize: 9,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

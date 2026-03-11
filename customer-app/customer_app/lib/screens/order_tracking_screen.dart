@@ -18,6 +18,7 @@ class OrderTrackingScreen extends StatefulWidget {
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   late String currentStatus;
   Timer? _timer;
+  dynamic _orderDetails;
 
   @override
   void initState() {
@@ -35,6 +36,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
            if (mounted) {
              setState(() {
                currentStatus = data['status'];
+               _orderDetails = data;
              });
              if (currentStatus == 'DELIVERED' || currentStatus == 'CANCELLED') {
                _timer?.cancel();
@@ -44,6 +46,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
        } catch (e) {
          print(e);
        }
+    });
+    // Initial fetch
+    ApiService.get('/orders/${widget.orderId}').then((resp) {
+      if (resp.statusCode == 200 && mounted) {
+        setState(() => _orderDetails = jsonDecode(resp.body));
+      }
     });
   }
 

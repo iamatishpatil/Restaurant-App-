@@ -13,9 +13,13 @@ import '../widgets/banner_widget.dart';
 import '../widgets/shimmer_widget.dart';
 import '../utils/constants.dart';
 import '../providers/location_provider.dart';
+import '../providers/mode_provider.dart';
 import '../widgets/location_selector_sheet.dart';
+import '../widgets/location_permission_dialog.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'profile_screen.dart';
+import '../providers/mode_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -42,13 +46,21 @@ class _HomeScreenState extends State<HomeScreen> {
       // Auto-detect live location on first load
       if (!location.isLocationSet) {
         location.determinePosition().then((_) {
-          // If after detection it's still not set (e.g. failed), show picker
-          if (!location.isLocationSet && mounted) {
+          // If after detection it's still not set, show picker
+          if (!location.isLocationSet && mounted && !location.hasPermissionError) {
             showModalBottomSheet(
               context: context,
               backgroundColor: Colors.transparent,
               isScrollControlled: true,
               builder: (context) => const LocationSelectorSheet(),
+            );
+          }
+        }).catchError((e) {
+          if (mounted && location.hasPermissionError) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const LocationPermissionDialog(),
             );
           }
         });
@@ -84,6 +96,13 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error fetching home data: $e');
       setState(() => _isLoading = false);
     }
+  }
+
+  List<MenuItem> _getFilteredItems(bool isVegMode) {
+    if (isVegMode) {
+      return _items.where((item) => item.isVeg).toList();
+    }
+    return _items.where((item) => !item.isVeg).toList();
   }
 
   Future<void> _fetchFilteredItems(String categoryId) async {
@@ -133,11 +152,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                         letterSpacing: 1.2,
                       ),
                     ),
-                    const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary, size: 16),
+                    Icon(Icons.keyboard_arrow_down_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), size: 16),
                   ],
                 ),
                 Text(
@@ -145,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -159,16 +178,16 @@ class _HomeScreenState extends State<HomeScreen> {
         surfaceTintColor: Theme.of(context).scaffoldBackgroundColor,
         actions: [
           GestureDetector(
-            onTap: () {},
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
             child: Container(
               padding: const EdgeInsets.all(10),
               margin: const EdgeInsets.only(right: 16),
               decoration: BoxDecoration(
-                color: AppColors.surface1,
+                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.surface3.withOpacity(0.5)),
+                border: Border.all(color: Theme.of(context).dividerColor),
               ),
-              child: const Icon(Icons.notifications_none_rounded, color: AppColors.text, size: 22),
+              child: Icon(Icons.person_3_outlined, color: Theme.of(context).colorScheme.onSurface, size: 22),
             ),
           ),
         ],
@@ -259,9 +278,15 @@ class _HomeScreenState extends State<HomeScreen> {
   
                   _buildSectionHeader('Popular Dishes'),
   
-                  _items.isEmpty 
-                  ? _buildEmptyState()
-                  : GridView.builder(
+                  Consumer<ModeProvider>(
+                    builder: (context, mode, _) {
+                      final filteredItems = _items.where((item) {
+                        return item.isVeg == mode.isVegMode;
+                      }).toList();
+
+                      if (filteredItems.isEmpty) return _buildEmptyState();
+
+                      return GridView.builder(
                         shrinkWrap: true,
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                         physics: const NeverScrollableScrollPhysics(),
@@ -271,11 +296,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                         ),
-                        itemCount: _items.length,
+                        itemCount: filteredItems.length,
                         itemBuilder: (ctx, i) {
-                          return CravyoFoodCard(item: _items[i]);
+                          return CravyoFoodCard(item: filteredItems[i]);
                         },
-                      ),
+                      );
+                    },
+                  ),
                 ],
                 const SizedBox(height: 100),
               ],

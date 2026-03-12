@@ -44,8 +44,20 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         _buildProfileCard([
-                          _buildProfileTile(context, Icons.location_on_rounded, 'Delivery Addresses', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressScreen()))),
-                          _buildProfileTile(context, Icons.history_rounded, 'Order History', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()))),
+                          _buildProfileTile(context, Icons.location_on_rounded, 'Delivery Addresses', () {
+                            if (auth.isAuthenticated) {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressScreen()));
+                            } else {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                            }
+                          }),
+                          _buildProfileTile(context, Icons.history_rounded, 'Order History', () {
+                            if (auth.isAuthenticated) {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
+                            } else {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                            }
+                          }),
                         ]),
                         const SizedBox(height: 16),
                         _buildProfileCard([
@@ -90,13 +102,13 @@ class ProfileScreen extends StatelessWidget {
             Text(
               'Join the Culinary Community',
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.text),
+              style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
             ),
             const SizedBox(height: 16),
             Text(
               'Login to manage your orders, save addresses\nand unlock exclusive dining rewards.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+              style: GoogleFonts.poppins(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), height: 1.5),
             ),
             const SizedBox(height: 48),
             SizedBox(
@@ -130,7 +142,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               child: CircleAvatar(
                 radius: 56,
-                backgroundColor: AppColors.surface1,
+                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
                 child: const Icon(Icons.person_rounded, size: 60, color: AppColors.primary),
               ),
             ),
@@ -139,14 +151,14 @@ class ProfileScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.text, 
+                  color: Theme.of(context).colorScheme.onSurface, 
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
+                  border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 3),
                   boxShadow: [
                     BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))
                   ],
                 ),
-                child: const Icon(Icons.edit_rounded, size: 16, color: Colors.white),
+                child: Icon(Icons.edit_rounded, size: 16, color: Theme.of(context).scaffoldBackgroundColor),
               ),
             ),
           ],
@@ -287,11 +299,11 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildEditField(nameController, 'Full Name', Icons.person_rounded),
+              _buildEditField(ctx, nameController, 'Full Name', Icons.person_rounded),
               const SizedBox(height: 16),
-              _buildEditField(emailController, 'Email Address', Icons.email_rounded),
+              _buildEditField(ctx, emailController, 'Email Address', Icons.email_rounded),
               const SizedBox(height: 16),
-              _buildEditField(phoneController, 'Phone Number', Icons.phone_rounded),
+              _buildEditField(ctx, phoneController, 'Phone Number', Icons.phone_rounded),
             ],
           ),
         ),
@@ -323,18 +335,18 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEditField(TextEditingController controller, String label, IconData icon) {
+  Widget _buildEditField(BuildContext context, TextEditingController controller, String label, IconData icon) {
     return TextField(
       controller: controller,
       style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.poppins(fontSize: 12, color: AppColors.textSecondary),
+        labelStyle: GoogleFonts.poppins(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
         prefixIcon: Icon(icon, size: 20, color: AppColors.primary),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: AppColors.surface3)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
         filled: true,
-        fillColor: AppColors.surface1,
+        fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );

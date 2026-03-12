@@ -11,11 +11,13 @@ class LocationProvider with ChangeNotifier {
   Position? _currentPosition;
   bool _isLoading = false;
   bool _isLocationSet = false;
+  bool _hasPermissionError = false;
 
   String get currentAddress => _currentAddress;
   String? get selectedAddressId => _selectedAddressId;
   bool get isLoading => _isLoading;
   bool get isLocationSet => _isLocationSet;
+  bool get hasPermissionError => _hasPermissionError;
 
   LocationProvider() {
     _loadFromPrefs();
@@ -74,7 +76,10 @@ class LocationProvider with ChangeNotifier {
         }
       }
       
+      _hasPermissionError = false;
+      
       if (permission == LocationPermission.deniedForever) {
+        _hasPermissionError = true;
         throw 'Location permissions are permanently denied, we cannot request permissions.';
       } 
 
@@ -90,6 +95,11 @@ class LocationProvider with ChangeNotifier {
       print('ERROR [LocationProvider]: $e');
       _currentAddress = 'Error: ${e.toString().split('\n').first}';
       _isLocationSet = false;
+      if (e.toString().contains('permission') || e.toString().contains('disabled')) {
+        _hasPermissionError = true;
+      }
+      notifyListeners();
+      rethrow; // Pass error up so the UI can intercept and show the dialog
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -151,7 +161,7 @@ class LocationProvider with ChangeNotifier {
       };
       
       final response = await ApiService.post('/address', body);
-      if (response.statusCode == 201) {
+      if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _selectedAddressId = data['id'];
         _saveToPrefs();

@@ -44,7 +44,7 @@ class CravyoSearchBar extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: hintText,
                 hintStyle: GoogleFonts.poppins(
-                  color: AppColors.textPlaceholder,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                   fontSize: 14,
                   fontWeight: FontWeight.w400,
                 ),
@@ -68,7 +68,7 @@ class CravyoSearchBar extends StatelessWidget {
       height: 40,
       width: 40,
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.08),
+        color: AppColors.primary.withOpacity(0.12),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),

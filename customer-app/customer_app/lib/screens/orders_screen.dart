@@ -6,6 +6,9 @@ import '../utils/constants.dart';
 import 'order_tracking_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import 'login_screen.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -21,7 +24,18 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchOrders();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthAndFetch();
+    });
+  }
+
+  Future<void> _checkAuthAndFetch() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    if (auth.isAuthenticated) {
+      _fetchOrders();
+    } else {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _fetchOrders() async {
@@ -64,23 +78,74 @@ class _OrdersScreenState extends State<OrdersScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: _isLoading 
-        ? _buildLoadingState()
-        : _orders.isEmpty 
-          ? _buildEmptyState()
-          : RefreshIndicator(
-              onRefresh: _fetchOrders,
-              color: AppColors.primary,
-              child: ListView.builder(
-                itemCount: _orders.length,
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                physics: const BouncingScrollPhysics(),
-                itemBuilder: (ctx, i) {
-                  final order = _orders[i];
-                  return _buildOrderCard(order).animate().fadeIn(delay: (i * 100).ms).slideX(begin: 0.1, end: 0);
-                },
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    final auth = Provider.of<AuthProvider>(context);
+    
+    if (_isLoading) return _buildLoadingState();
+    if (!auth.isAuthenticated) return _buildLoginPrompt();
+    if (_orders.isEmpty) return _buildEmptyState();
+
+    return RefreshIndicator(
+      onRefresh: _fetchOrders,
+      color: AppColors.primary,
+      child: ListView.builder(
+        itemCount: _orders.length,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        physics: const BouncingScrollPhysics(),
+        itemBuilder: (ctx, i) {
+          final order = _orders[i];
+          return _buildOrderCard(order).animate().fadeIn(delay: (i * 100).ms).slideX(begin: 0.1, end: 0);
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoginPrompt() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              height: 140,
+              width: 140,
+              decoration: BoxDecoration(
+                color: AppColors.surface1,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.lock_outline_rounded, size: 60, color: AppColors.primary.withOpacity(0.3)),
+            ).animate().scale(duration: 600.ms, curve: Curves.bounceOut),
+            const SizedBox(height: 32),
+            Text(
+              'Login Required',
+              style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Please login to view your order history\nand track your active meals.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+            ),
+            const SizedBox(height: 48),
+            SizedBox(
+              width: 220,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Login Now'),
               ),
             ),
+          ],
+        ),
+      ),
     );
   }
 

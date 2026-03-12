@@ -6,6 +6,7 @@ import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/location_provider.dart';
 import 'providers/navigation_provider.dart';
+import 'providers/mode_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/orders_screen.dart';
@@ -24,6 +25,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ModeProvider()),
       ],
       child: const MyApp(),
     ),
@@ -59,112 +61,161 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    // Auto-detection is now handled by the setup flow or happens on first launch
   }
 
   final List<Widget> _screens = [
     const HomeScreen(),
     const CartScreen(),
     const OrdersScreen(),
-    const ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     final nav = Provider.of<NavigationProvider>(context);
-    print('DEBUG: MainScreen building. Current index: ${nav.selectedIndex}');
 
     return Scaffold(
       body: Stack(
         children: [
           _screens[nav.selectedIndex],
           Positioned(
-            left: 20,
-            right: 20,
-            bottom: 24,
-            child: _buildBottomBar(nav),
+            left: 16,
+            right: 16,
+            bottom: 30, // Elevated for floating feel
+            child: Row(
+              children: [
+                Expanded(child: _buildBottomBar(nav)),
+                const SizedBox(width: 8),
+                _buildModeToggle(),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildModeToggle() {
+    return Consumer<ModeProvider>(
+      builder: (context, mode, _) {
+        final isVeg = mode.isVegMode;
+        return GestureDetector(
+          onTap: () => mode.toggleMode(),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: isVeg ? const Color(0xFF2D4B1F) : const Color(0xFFC62828), // Dark forest green or deep red
+              borderRadius: BorderRadius.circular(35),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isVeg ? Icons.volunteer_activism_rounded : Icons.flash_on_rounded, // Heart sparkle feel or non-veg icon
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isVeg ? 'Non-Veg' : 'Veg',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildBottomBar(NavigationProvider nav) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 25,
-                offset: const Offset(0, 8),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _navItem(0, Icons.grid_view_outlined, Icons.grid_view_rounded, 'Home', nav),
-              _navItem(1, Icons.shopping_basket_outlined, Icons.shopping_basket_rounded, 'Cart', nav),
-              _navItem(2, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders', nav),
-              _navItem(3, Icons.person_3_outlined, Icons.person_3_rounded, 'Profile', nav),
-            ],
-          ),
-        ),
+        ],
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.06)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _navItem(0, Icons.home_outlined, Icons.home_rounded, 'Home', nav),
+          _navItem(1, Icons.shopping_cart_outlined, Icons.shopping_cart_rounded, 'Cart', nav),
+          _navItem(2, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders', nav),
+        ],
       ),
     );
   }
 
   Widget _navItem(int index, IconData icon, IconData activeIcon, String label, NavigationProvider nav) {
     final isSelected = nav.selectedIndex == index;
+    
+    Widget iconWidget = Icon(
+      isSelected ? activeIcon : icon,
+      color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+      size: 22,
+    );
+
+    // Apply badge conditionally on Cart (index 1)
+    if (index == 1) {
+      iconWidget = Consumer<CartProvider>(
+        builder: (context, cart, child) {
+          if (cart.items.isEmpty) return child!;
+          return Badge(
+            backgroundColor: AppColors.primary,
+            smallSize: 8,
+            child: child,
+          );
+        },
+        child: iconWidget,
+      );
+    }
+
     return GestureDetector(
       onTap: () => nav.setIndex(index),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 400),
         curve: Curves.fastOutSlowIn,
-        padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            )
-          ] : [],
+          color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
         ),
-        child: Row(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: isSelected ? Colors.white : AppColors.textSecondary.withOpacity(0.7),
-              size: 22,
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                ),
+            iconWidget,
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                fontSize: 10,
               ),
-            ],
+            ),
           ],
         ),
       ),
     );
   }
 }
-

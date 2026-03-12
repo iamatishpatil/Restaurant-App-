@@ -46,7 +46,7 @@ class CravyoCategoryItem extends StatelessWidget {
               width: 68,
               padding: const EdgeInsets.all(AppSpacing.small),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : bgColor,
+                color: isSelected ? AppColors.primary : (Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5) : bgColor),
                 borderRadius: BorderRadius.circular(22), // Premium squircle look
                 boxShadow: isSelected ? AppShadows.premiumShadow : [],
               ),
@@ -59,13 +59,13 @@ class CravyoCategoryItem extends StatelessWidget {
                         fit: BoxFit.contain,
                         errorBuilder: (c, e, s) => Icon(
                           icon,
-                          color: isSelected ? AppColors.white : AppColors.primary,
+                          color: isSelected ? Colors.white : AppColors.primary,
                           size: 30,
                         ),
                       )
                     : Icon(
                         icon,
-                        color: isSelected ? AppColors.white : AppColors.primary,
+                        color: isSelected ? Colors.white : AppColors.primary,
                         size: 30,
                       ),
               ),

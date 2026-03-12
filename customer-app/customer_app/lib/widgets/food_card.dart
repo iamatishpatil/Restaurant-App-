@@ -55,12 +55,12 @@ class CravyoFoodCard extends StatelessWidget {
                           width: double.infinity,
                           placeholder: (context, url) => Container(
                             height: 150,
-                            color: AppColors.surface2,
+                            color: Theme.of(context).colorScheme.surfaceVariant,
                           ),
                           errorWidget: (context, url, error) => Container(
                             height: 150,
-                            color: AppColors.surface2,
-                            child: const Icon(Icons.fastfood_rounded, color: AppColors.textDisabled),
+                            color: Theme.of(context).colorScheme.surfaceVariant,
+                            child: Icon(Icons.fastfood_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                           ),
                         ),
                         // Premium Gradient Overlay
@@ -119,9 +119,15 @@ class CravyoFoodCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(6),
-                      boxShadow: AppShadows.premiumShadow,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
                     ),
                     child: Icon(
                       Icons.circle,
@@ -196,9 +202,9 @@ class CravyoFoodCard extends StatelessWidget {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${item.name} added to cart'),
+            content: Text('${item.name} added to cart', style: TextStyle(color: Theme.of(context).scaffoldBackgroundColor)),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: AppColors.text,
+            backgroundColor: Theme.of(context).colorScheme.onSurface,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             duration: const Duration(seconds: 1),
           ),
@@ -220,7 +226,7 @@ class CravyoFoodCard extends StatelessWidget {
         ),
         child: const Icon(
           Icons.add_rounded,
-          color: AppColors.white,
+          color: Colors.white,
           size: 22,
         ),
       ),

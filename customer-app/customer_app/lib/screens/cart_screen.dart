@@ -34,59 +34,71 @@ class _CartScreenState extends State<CartScreen> {
           showModalBottomSheet(
             context: context,
             backgroundColor: Colors.transparent,
-            builder: (ctx) => Container(
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Select Delivery Address', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  if (addresses.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Text('No addresses found.', style: Theme.of(context).textTheme.bodyMedium),
+            isScrollControlled: true,
+            builder: (ctx) => DraggableScrollableSheet(
+              initialChildSize: 0.6,
+              minChildSize: 0.4,
+              maxChildSize: 0.9,
+              builder: (_, controller) => Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface3,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                  ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle),
-                      child: const Icon(Icons.add_location_alt_rounded, color: Colors.blue, size: 20),
+                    const SizedBox(height: 16),
+                    Text('Select Delivery Address', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    Expanded(
+                      child: ListView(
+                        controller: controller,
+                        children: [
+                          if (addresses.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.all(32.0),
+                              child: Text('No addresses found.', style: Theme.of(context).textTheme.bodyMedium),
+                            ),
+                          ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle),
+                              child: const Icon(Icons.add_location_alt_rounded, color: Colors.blue, size: 20),
+                            ),
+                            title: const Text('Add New Address', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressScreen()));
+                            },
+                          ),
+                          const Divider(),
+                          ...addresses.map((addr) => ListTile(
+                            leading: const Icon(Icons.location_on_rounded, color: AppColors.primary),
+                            title: Text(addr['type'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('${addr['addressLine1']}, ${addr['city']}'),
+                            onTap: () {
+                              setState(() {
+                                _selectedAddressId = addr['id'];
+                                _selectedAddressLabel = '${addr['type']}: ${addr['addressLine1']}';
+                              });
+                              Navigator.pop(ctx);
+                            },
+                          )).toList(),
+                        ],
+                      ),
                     ),
-                    title: const Text('Add New Address', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressScreen()));
-                    },
-                  ),
-                  const Divider(),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: addresses.length,
-                      itemBuilder: (ctx, index) {
-                        final addr = addresses[index];
-                        return ListTile(
-                          leading: const Icon(Icons.location_on_rounded, color: AppColors.primary),
-                          title: Text(addr['type'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('${addr['addressLine1']}, ${addr['city']}'),
-                          onTap: () {
-                            setState(() {
-                              _selectedAddressId = addr['id'];
-                              _selectedAddressLabel = '${addr['type']}: ${addr['addressLine1']}';
-                            });
-                            Navigator.pop(ctx);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -182,7 +194,7 @@ class _CartScreenState extends State<CartScreen> {
           Text(
             'Explore our delicious menu items\nand add them to your cart!',
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+            style: GoogleFonts.poppins(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), height: 1.5),
           ),
           const SizedBox(height: 40),
           SizedBox(
@@ -254,7 +266,7 @@ class _CartScreenState extends State<CartScreen> {
   Widget _buildCartQuantitySelector(CartItem cartItem, CartProvider cart) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface1,
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(4),
@@ -281,7 +293,7 @@ class _CartScreenState extends State<CartScreen> {
         height: 28,
         width: 28,
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
@@ -298,7 +310,7 @@ class _CartScreenState extends State<CartScreen> {
 
   Widget _buildCheckoutSection(CartProvider cart) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 110),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -319,9 +331,9 @@ class _CartScreenState extends State<CartScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: AppColors.surface1,
+                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.surface3.withOpacity(0.5)),
+                border: Border.all(color: Theme.of(context).dividerColor),
               ),
               child: Row(
                 children: [
@@ -337,7 +349,7 @@ class _CartScreenState extends State<CartScreen> {
                       children: [
                         Text(
                           'DELIVERING TO',
-                          style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.textSecondary, letterSpacing: 0.5),
+                          style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), letterSpacing: 0.5),
                         ),
                         Text(
                           _selectedAddressLabel,
@@ -425,7 +437,7 @@ class _CartScreenState extends State<CartScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+          Text(label, style: GoogleFonts.poppins(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontWeight: FontWeight.w500)),
           Text(
             value,
             style: GoogleFonts.poppins(

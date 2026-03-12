@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'dart:convert';
+import '../utils/constants.dart';
 
 class AddressScreen extends StatefulWidget {
   const AddressScreen({super.key});
@@ -97,7 +98,7 @@ class _AddressScreenState extends State<AddressScreen> {
                   setModalState(() => isSaving = false);
                 }
               }, 
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF4D4D), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
               child: isSaving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Add Address')
             ),
           ],
@@ -111,7 +112,7 @@ class _AddressScreenState extends State<AddressScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('My Addresses')),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF4D4D)))
+        ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
         : _addresses.isEmpty 
           ? Center(
               child: Column(
@@ -136,8 +137,8 @@ class _AddressScreenState extends State<AddressScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     leading: Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: const Color(0xFFFF4D4D).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.location_on, color: Color(0xFFFF4D4D)),
+                      decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.location_on, color: AppColors.primary),
                     ),
                     title: Text(addr['type'], style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text('${addr['addressLine1']}, ${addr['city']}', style: const TextStyle(color: Colors.grey)),
@@ -167,7 +168,7 @@ class _AddressScreenState extends State<AddressScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addAddress,
-        backgroundColor: const Color(0xFFFF4D4D),
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );

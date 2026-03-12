@@ -8,6 +8,10 @@ class AuthProvider with ChangeNotifier {
   User? _user;
   String? _token;
 
+  AuthProvider() {
+    ApiService.setLogoutCallback(logout);
+  }
+
   User? get user => _user;
   String? get token => _token;
   bool get isAuthenticated => _token != null;

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createOrder, getMyOrders, getOrderById, updateOrderStatus, getAllOrders } from "../controllers/orderController";
+import { createOrder, getMyOrders, getOrderById, updateOrderStatus, getAllOrders, generateBill } from "../controllers/orderController";
 import { authenticate, authorize } from "../middlewares/authMiddleware";
 
 const router = Router();
@@ -8,8 +8,9 @@ router.post("/", authenticate, createOrder);
 router.get("/my", authenticate, getMyOrders);
 router.get("/:id", authenticate, getOrderById);
 
-// Admin Routes
-router.get("/", authenticate, authorize("ADMIN", "MANAGER"), getAllOrders);
-router.put("/:id/status", authenticate, authorize("ADMIN", "MANAGER"), updateOrderStatus);
+// Admin / Kitchen Routes
+router.get("/", authenticate, authorize("ADMIN", "MANAGER", "CHEF", "WAITER"), getAllOrders);
+router.put("/:id/status", authenticate, authorize("ADMIN", "MANAGER", "CHEF", "WAITER"), updateOrderStatus);
+router.post("/:id/bill", authenticate, authorize("ADMIN", "MANAGER", "WAITER"), generateBill);
 
 export default router;

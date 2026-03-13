@@ -3,7 +3,7 @@ import { prisma } from "../index";
 
 export const getCategories = async (req: Request, res: Response) => {
   try {
-    const categories = await prisma.category.findMany({
+    const categories = await prisma.menuCategory.findMany({
       include: { items: true },
       orderBy: { name: 'asc' }
     });
@@ -43,9 +43,9 @@ export const getMenuItemById = async (req: Request, res: Response) => {
 
 export const createMenuItem = async (req: Request, res: Response) => {
   try {
-    const { name, description, price, categoryId, isVeg, image } = req.body;
+    const { name, description, price, categoryId, isVeg, image, preparationTime, availability } = req.body;
     const item = await prisma.menuItem.create({
-      data: { name, description, price, categoryId, isVeg, image },
+      data: { name, description, price, categoryId, isVeg, image, preparationTime, availability },
     });
     res.status(201).json(item);
   } catch (error: any) {
@@ -56,10 +56,10 @@ export const createMenuItem = async (req: Request, res: Response) => {
 export const updateMenuItem = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, price, categoryId, isVeg, image, isAvailable } = req.body;
+    const { name, description, price, categoryId, isVeg, image, preparationTime, availability } = req.body;
     const item = await prisma.menuItem.update({
       where: { id: id as string },
-      data: { name, description, price, categoryId, isVeg, image, isAvailable },
+      data: { name, description, price, categoryId, isVeg, image, preparationTime, availability },
     });
     res.json(item);
   } catch (error: any) {
@@ -72,6 +72,20 @@ export const deleteMenuItem = async (req: Request, res: Response) => {
     const { id } = req.params;
     await prisma.menuItem.delete({ where: { id: id as string } });
     res.json({ message: "Item deleted successfully" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const updateMenuItemChef = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { preparationTime, availability } = req.body;
+    const item = await prisma.menuItem.update({
+      where: { id: id as string },
+      data: { preparationTime, availability },
+    });
+    res.json(item);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }

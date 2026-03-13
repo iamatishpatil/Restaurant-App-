@@ -293,8 +293,8 @@ const CategoryManagement = () => {
                              </div>
                              <p className="text-xs font-bold text-gray-900 mt-1">{formatINR(item.price)}</p>
                              <div className="flex items-center justify-between mt-3">
-                                <span className={`text-[10px] font-medium ${item.isAvailable ? 'text-green-500' : 'text-red-400'}`}>
-                                  {item.isAvailable ? '• Available' : '• Sold Out'}
+                                <span className={`text-[10px] font-medium ${item.availability ? 'text-green-500' : 'text-red-400'}`}>
+                                  {item.availability ? '• Available' : '• Sold Out'}
                                 </span>
                                 <Link 
                                   to="/menu"

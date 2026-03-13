@@ -13,7 +13,11 @@ import {
   Shield,
   MessageSquare,
   X,
-  ChevronRight
+  ChevronRight,
+  LayoutGrid,
+  ChefHat,
+  BellRing,
+  Printer as PrinterIcon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,18 +25,26 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (val: bool
   const { logout, user } = useAuth();
 
   const navItems = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', color: 'text-blue-400' },
-    { to: '/orders', icon: ClipboardList, label: 'Orders', color: 'text-orange-400' },
-    { to: '/menu', icon: Utensils, label: 'Menu Management', color: 'text-green-400' },
-    { to: '/categories', icon: Layers, label: 'Categories', color: 'text-purple-400' },
-    { to: '/banners', icon: ImageIcon, label: 'Banners', color: 'text-pink-400' },
-    { to: '/inventory', icon: Package, label: 'Inventory', color: 'text-yellow-400' },
-    { to: '/staff', icon: Shield, label: 'Staff Management', color: 'text-cyan-400' },
-    { to: '/customers', icon: Users, label: 'Customers', color: 'text-indigo-400' },
-    { to: '/coupons', icon: Tag, label: 'Coupons', color: 'text-red-400' },
-    { to: '/reviews', icon: MessageSquare, label: 'Reviews', color: 'text-teal-400' },
-    { to: '/settings', icon: Settings, label: 'Settings', color: 'text-gray-400' },
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', color: 'text-blue-400', roles: ['ADMIN', 'MANAGER'] },
+    { to: '/orders', icon: ClipboardList, label: 'Orders', color: 'text-orange-400', roles: ['ADMIN', 'MANAGER', 'CHEF', 'WAITER'] },
+    { to: '/tables', icon: LayoutGrid, label: 'Tables', color: 'text-pink-400', roles: ['ADMIN', 'MANAGER', 'WAITER'] },
+    { to: '/kds', icon: ChefHat, label: 'Kitchen Display', color: 'text-blue-400', roles: ['ADMIN', 'MANAGER', 'CHEF'] },
+    { to: '/waiter', icon: BellRing, label: 'Waiter Dashboard', color: 'text-amber-400', roles: ['ADMIN', 'MANAGER', 'WAITER'] },
+    { to: '/menu', icon: Utensils, label: 'Menu Management', color: 'text-green-400', roles: ['ADMIN', 'MANAGER', 'CHEF'] },
+    { to: '/categories', icon: Layers, label: 'Categories', color: 'text-purple-400', roles: ['ADMIN', 'MANAGER'] },
+    { to: '/banners', icon: ImageIcon, label: 'Banners', color: 'text-pink-400', roles: ['ADMIN', 'MANAGER'] },
+    { to: '/inventory', icon: Package, label: 'Inventory', color: 'text-yellow-400', roles: ['ADMIN', 'MANAGER', 'CHEF'] },
+    { to: '/staff', icon: Shield, label: 'Staff Management', color: 'text-cyan-400', roles: ['ADMIN', 'MANAGER'] },
+    { to: '/customers', icon: Users, label: 'Customers', color: 'text-indigo-400', roles: ['ADMIN', 'MANAGER'] },
+    { to: '/coupons', icon: Tag, label: 'Coupons', color: 'text-red-400', roles: ['ADMIN', 'MANAGER'] },
+    { to: '/reviews', icon: MessageSquare, label: 'Reviews', color: 'text-teal-400', roles: ['ADMIN', 'MANAGER'] },
+    { to: '/printers', icon: PrinterIcon, label: 'Printer Setup', color: 'text-gray-300', roles: ['ADMIN', 'MANAGER'] },
+    { to: '/settings', icon: Settings, label: 'Settings', color: 'text-gray-400', roles: ['ADMIN', 'MANAGER'] },
   ];
+
+  const filteredNavItems = navItems.filter(item => 
+    !item.roles || (user?.role && item.roles.includes(user.role))
+  );
 
   return (
     <>
@@ -63,7 +75,7 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (val: bool
 
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import rateLimit from "express-rate-limit";
+import { createServer } from "http";
+import path from "path";
 
 dotenv.config();
 
@@ -11,11 +13,13 @@ import menuRoutes from "./routes/menuRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import addressRoutes from "./routes/addressRoutes";
+import tableRoutes from "./routes/tableRoutes";
 import reviewRoutes from "./routes/reviewRoutes";
 import uploadRoutes from "./routes/uploadRoutes";
-import path from "path";
+import { socketService } from "./services/socketService";
 
 const app: Application = express();
+const httpServer = createServer(app);
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 
@@ -35,6 +39,7 @@ app.use("/api/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/address", addressRoutes);
+app.use("/api/tables", tableRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
@@ -60,8 +65,11 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+// Initialize Socket.io
+socketService.init(httpServer);
+
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
 
 export { prisma };

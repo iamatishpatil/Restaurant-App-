@@ -12,6 +12,7 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.2.1",
     "@tailwindcss/vite": "^4.2.1",
+    "@types/socket.io-client": "^1.4.36",
     "autoprefixer": "^10.4.27",
     "axios": "^1.13.6",
     "clsx": "^2.1.1",
@@ -21,6 +22,7 @@
     "react-dom": "^19.2.0",
     "react-router-dom": "^6.30.3",
     "recharts": "^3.8.0",
+    "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.1"
   },

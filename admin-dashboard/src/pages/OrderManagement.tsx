@@ -67,12 +67,34 @@ const OrderManagement = () => {
     }
   };
 
-  const filteredOrders = orders.filter((o: any) => {
-    const matchesStatus = filterStatus === 'ALL' || o.status === filterStatus;
-    const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.user?.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const statusPriority: Record<string, number> = {
+    PENDING: 1,
+    PREPARING: 2,
+    COOKING: 2,
+    PACKING: 2,
+    OUT_FOR_DELIVERY: 2,
+    DELIVERED: 3,
+    CANCELLED: 3,
+  };
+
+  const filteredOrders = orders
+    .filter((o: any) => {
+      const matchesStatus = filterStatus === 'ALL' || o.status === filterStatus;
+      const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.user?.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesStatus && matchesSearch;
+    })
+    .sort((a: any, b: any) => {
+      const priorityA = statusPriority[a.status] || 99;
+      const priorityB = statusPriority[b.status] || 99;
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      // Secondary sort: newest first
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   const statusConfig: Record<string, { label: string; bg: string; text: string }> = {
     PENDING:          { label: 'Pending',          bg: 'bg-yellow-50',  text: 'text-yellow-700' },
@@ -149,6 +171,15 @@ const OrderManagement = () => {
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${sc.bg} ${sc.text}`}>
                         {sc.label}
                       </span>
+                      {order.status === 'PENDING' && (
+                        <span className="flex items-center gap-1.5 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                          </span>
+                          <span className="text-[10px] font-black text-red-600 tracking-tighter animate-pulse leading-none">NEW</span>
+                        </span>
+                      )}
                       {order.payment && (
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                           order.payment.status === 'COMPLETED' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'

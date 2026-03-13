@@ -17,15 +17,20 @@
   "type": "commonjs",
   "dependencies": {
     "@prisma/client": "^6.19.2",
+    "@types/qrcode": "^1.5.6",
+    "@types/socket.io": "^3.0.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
+    "esc-pos-encoder": "^3.0.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.0",
     "firebase-admin": "^13.7.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "prisma": "^6.19.2",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {

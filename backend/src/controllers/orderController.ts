@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { prisma } from "../index";
 import { z } from "zod";
 import { sendNotification } from "../services/notificationService";
+import { socketService } from "../services/socketService";
+import { printerService } from "../services/printerService";
 
 const orderSchema = z.object({
   items: z.array(z.object({
@@ -36,10 +38,9 @@ export const createOrder = async (req: any, res: Response) => {
         data: {
           userId,
           totalPrice,
-          totalItems: items.length,
           deliveryType,
           addressId: deliveryType === "DELIVERY" ? addressId : null,
-          status: "PENDING",
+          status: "NEW_ORDER",
           paymentId: payment.id,
           orderItems: {
             create: items.map((item: any) => ({
@@ -49,10 +50,18 @@ export const createOrder = async (req: any, res: Response) => {
             })),
           },
         },
-        include: { orderItems: true, payment: true },
+        include: { 
+          orderItems: { include: { menuItem: true } }, 
+          payment: true,
+          user: true,
+          table: true 
+        },
       });
       return newOrder;
     });
+
+    // Notify real-time subscribers
+    socketService.notifyNewOrder(order);
 
     res.status(201).json(order);
   } catch (error: any) {
@@ -95,17 +104,62 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const { status } = req.body;
+    
+    // Logic: If status is COMPLETED, also ensure payment status is UPDATED if it's COD
+    const orderData: any = { status };
+    if (status === "COMPLETED") {
+       // Auto-update linked payment to COMPLETED
+       await prisma.order.findUnique({
+         where: { id },
+         include: { payment: true }
+       }).then(async (o) => {
+         if (o?.paymentId) {
+           await prisma.payment.update({
+             where: { id: o.paymentId },
+             data: { status: 'COMPLETED' }
+           });
+         }
+       });
+    }
+
     const order = await prisma.order.update({
       where: { id },
-      data: { status },
-      include: { user: true },
+      data: orderData,
+      include: { 
+        user: true,
+        orderItems: { include: { menuItem: true } },
+        table: true
+      },
     });
+
+    // Notify real-time subscribers (KDS, Admin, Customer)
+    socketService.notifyStatusUpdate(id, status);
+
+    // Auto-print KOT when order is accepted
+    if (status === "ACCEPTED") {
+      printerService.autoPrintKDS(id);
+    }
+
+    // Specialized notification for waiters if food is ready
+    if (status === "READY") {
+      socketService.notifyReadyForPickup(order);
+    }
 
     if (order.userId) {
       await sendNotification(order.userId, "Order Update", `Your order is now ${status}`);
     }
 
     res.json(order);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const generateBill = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    await printerService.autoPrintBill(id);
+    res.json({ message: "Bill sent to printer" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }

@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import { prisma } from '../index';
+import { OrderStatus } from '@prisma/client';
 
-// Category CRUD
+// MenuCategory CRUD
 export const getCategories = async (req: Request, res: Response) => {
   try {
-    const categories = await prisma.category.findMany({
+    const categories = await prisma.menuCategory.findMany({
       orderBy: { name: 'asc' }
     });
     res.json(categories);
@@ -15,7 +16,17 @@ export const getCategories = async (req: Request, res: Response) => {
 
 export const createCategory = async (req: Request, res: Response) => {
   try {
-    const category = await prisma.category.create({ data: req.body });
+    let { restaurantId, ...data } = req.body;
+    if (!restaurantId) {
+      const rest = await prisma.restaurant.findFirst();
+      restaurantId = rest?.id;
+    }
+    if (!restaurantId) {
+      return res.status(400).json({ message: "No restaurant found. Create a restaurant first." });
+    }
+    const category = await prisma.menuCategory.create({ 
+      data: { ...data, restaurantId } 
+    });
     res.status(201).json(category);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -25,7 +36,7 @@ export const createCategory = async (req: Request, res: Response) => {
 export const updateCategory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const category = await prisma.category.update({
+    const category = await prisma.menuCategory.update({
       where: { id: id as string },
       data: req.body
     });
@@ -38,12 +49,11 @@ export const updateCategory = async (req: Request, res: Response) => {
 export const deleteCategory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // Check if category has items
     const count = await prisma.menuItem.count({ where: { categoryId: id as string } });
     if (count > 0) {
       return res.status(400).json({ message: "Cannot delete category with active menu items" });
     }
-    await prisma.category.delete({ where: { id: id as string } });
+    await prisma.menuCategory.delete({ where: { id: id as string } });
     res.json({ message: "Category deleted successfully" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -53,7 +63,6 @@ export const deleteCategory = async (req: Request, res: Response) => {
 // Coupon CRUD
 export const getCoupons = async (req: Request, res: Response) => {
   try {
-    // Admin should see all coupons, active or not
     const coupons = await prisma.coupon.findMany({
       orderBy: { code: 'asc' }
     });
@@ -154,14 +163,16 @@ export const getAnalytics = async (req: Request, res: Response) => {
   try {
     const orders = await prisma.order.findMany();
     const users = await prisma.user.findMany({ where: { role: 'CUSTOMER' } });
-    const menuItems = await prisma.menuItem.findMany();
+    const menuItems = await prisma.menuItem.findMany({
+      include: { reviews: true }
+    });
 
     const totalRevenue = orders.reduce((acc, order) => acc + Number(order.totalPrice), 0);
-    const activeOrders = orders.filter(o => !['DELIVERED', 'CANCELLED'].includes(o.status)).length;
+    // Active orders are anything not COMPLETED or CANCELLED
+    const activeOrders = orders.filter(o => !['COMPLETED', 'CANCELLED'].includes(o.status)).length;
     const newCustomers = users.length;
     const orderGrowth = 12.5; 
 
-    // Top Selling Items (by quantity)
     const itemSales = await prisma.orderItem.groupBy({
       by: ['menuItemId'],
       _sum: { quantity: true },
@@ -169,16 +180,15 @@ export const getAnalytics = async (req: Request, res: Response) => {
       take: 5
     });
 
-    const topSelling = await Promise.all(itemSales.map(async (sale) => {
+    const topSelling = itemSales.map((sale) => {
       const item = menuItems.find(i => i.id === sale.menuItemId);
       return {
         name: item?.name || 'Unknown',
         sales: sale._sum.quantity || 0,
         image: item?.image
       };
-    }));
+    });
 
-    // Low Selling Items (by quantity) - excluding ones with 0 sales for now if we don't have all item IDs in OrderItem
     const bottomSales = await prisma.orderItem.groupBy({
       by: ['menuItemId'],
       _sum: { quantity: true },
@@ -186,24 +196,29 @@ export const getAnalytics = async (req: Request, res: Response) => {
       take: 5
     });
 
-    const lowSelling = await Promise.all(bottomSales.map(async (sale) => {
+    const lowSelling = bottomSales.map((sale) => {
       const item = menuItems.find(i => i.id === sale.menuItemId);
       return {
         name: item?.name || 'Unknown',
         sales: sale._sum.quantity || 0,
         image: item?.image
       };
-    }));
+    });
 
-    // Top Rated Items
+    // Top Rated Items calculated from Reviews
     const topRated = menuItems
+      .map(item => {
+        const avgRating = item.reviews.length > 0 
+          ? item.reviews.reduce((acc, r) => acc + r.rating, 0) / item.reviews.length 
+          : 0;
+        return {
+          name: item.name,
+          rating: avgRating,
+          image: item.image
+        };
+      })
       .sort((a, b) => b.rating - a.rating)
-      .slice(0, 5)
-      .map(item => ({
-        name: item.name,
-        rating: item.rating,
-        image: item.image
-      }));
+      .slice(0, 5);
 
     const last7Days = Array.from({length: 7}, (_, i) => {
       const d = new Date();
@@ -270,7 +285,7 @@ export const updateSettings = async (req: Request, res: Response) => {
 export const getNotifications = async (req: Request, res: Response) => {
   try {
     const pendingOrders = await prisma.order.findMany({
-      where: { status: 'PENDING' },
+      where: { status: 'NEW_ORDER' },
       include: { user: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
       take: 10
@@ -278,5 +293,57 @@ export const getNotifications = async (req: Request, res: Response) => {
     res.json(pendingOrders);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// --- Printer Management ---
+export const getPrinters = async (req: Request, res: Response) => {
+  try {
+    const printers = await prisma.printer.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(printers);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const createPrinter = async (req: Request, res: Response) => {
+  try {
+    const { name, type, connection, usage, restaurantId } = req.body;
+    let targetRestaurantId = restaurantId;
+    if (!targetRestaurantId) {
+      const rest = await prisma.restaurant.findFirst();
+      targetRestaurantId = rest?.id;
+    }
+
+    if (!targetRestaurantId) {
+      return res.status(400).json({ message: "No restaurant found. Create a restaurant first." });
+    }
+
+    const printer = await prisma.printer.create({
+      data: {
+        name,
+        type,
+        connection,
+        usage,
+        restaurantId: targetRestaurantId
+      }
+    });
+    res.status(201).json(printer);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const deletePrinter = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await prisma.printer.delete({
+      where: { id: id as string }
+    });
+    res.json({ message: "Printer deleted successfully" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 };

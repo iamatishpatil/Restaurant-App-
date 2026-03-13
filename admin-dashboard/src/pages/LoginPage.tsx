@@ -21,12 +21,18 @@ const LoginPage = () => {
       const isPhone = /^\d+$/.test(identifier);
       const payload = isPhone ? { phone: identifier, password } : { email: identifier, password };
       const res = await axios.post('http://localhost:5000/api/auth/login', payload);
-      if (res.data.user.role !== 'ADMIN' && res.data.user.role !== 'MANAGER') {
-        setError('Access denied: You are not an admin.');
-        return;
+      const user = res.data.user;
+      
+      login(user, res.data.token);
+
+      // Role-based redirection
+      if (user.role === 'CHEF') {
+        navigate('/kds');
+      } else if (user.role === 'WAITER') {
+        navigate('/waiter');
+      } else {
+        navigate('/dashboard');
       }
-      login(res.data.user, res.data.token);
-      navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {
@@ -131,7 +137,7 @@ const LoginPage = () => {
 
             <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
               <p className="text-xs text-blue-600 font-medium text-center">
-                🔐 Secure access — Admin & Manager roles only
+                🔐 Secure access — Authorized Staff Only
               </p>
             </div>
           </div>

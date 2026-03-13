@@ -4,7 +4,6 @@ import { io } from 'socket.io-client';
 import { 
   Bell, 
   CheckCircle2, 
-  CheckCircle2, 
   Utensils,
   RefreshCw,
   Navigation,

@@ -32,7 +32,7 @@ export const createReview = async (req: Request, res: Response) => {
 export const deleteReview = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await prisma.review.delete({ where: { id } });
+    await prisma.review.delete({ where: { id: id as string } });
     res.json({ message: "Review deleted successfully" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });

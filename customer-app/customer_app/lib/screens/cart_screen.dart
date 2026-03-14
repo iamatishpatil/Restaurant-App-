@@ -5,14 +5,13 @@ import '../services/api_service.dart';
 import '../providers/cart_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/navigation_provider.dart';
-import '../providers/location_provider.dart';
 import '../utils/constants.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'address_screen.dart';
 import 'login_screen.dart';
 import 'payment_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../providers/table_provider.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -22,118 +21,10 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  String? _selectedAddressId;
-  String _selectedAddressLabel = 'Select Delivery Address';
-
-  Future<void> _selectAddress() async {
-    try {
-      final response = await ApiService.get('/address');
-      if (response.statusCode == 200) {
-        final List<dynamic> addresses = jsonDecode(response.body);
-        if (mounted) {
-          showModalBottomSheet(
-            context: context,
-            backgroundColor: Colors.transparent,
-            isScrollControlled: true,
-            builder: (ctx) => DraggableScrollableSheet(
-              initialChildSize: 0.6,
-              minChildSize: 0.4,
-              maxChildSize: 0.9,
-              builder: (_, controller) => Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.surface3,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text('Select Delivery Address', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    Expanded(
-                      child: ListView(
-                        controller: controller,
-                        children: [
-                          if (addresses.isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.all(32.0),
-                              child: Text('No addresses found.', style: Theme.of(context).textTheme.bodyMedium),
-                            ),
-                          ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle),
-                              child: const Icon(Icons.add_location_alt_rounded, color: Colors.blue, size: 20),
-                            ),
-                            title: const Text('Add New Address', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
-                            onTap: () {
-                              Navigator.pop(ctx);
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressScreen()));
-                            },
-                          ),
-                          const Divider(),
-                          ...addresses.map((addr) => ListTile(
-                            leading: const Icon(Icons.location_on_rounded, color: AppColors.primary),
-                            title: Text(addr['type'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('${addr['addressLine1']}, ${addr['city']}'),
-                            onTap: () {
-                              setState(() {
-                                _selectedAddressId = addr['id'];
-                                _selectedAddressLabel = '${addr['type']}: ${addr['addressLine1']}';
-                              });
-                              Navigator.pop(ctx);
-                            },
-                          )).toList(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error loading addresses')));
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final location = Provider.of<LocationProvider>(context, listen: false);
-      if (location.selectedAddressId != null) {
-        setState(() {
-          _selectedAddressId = location.selectedAddressId;
-          _selectedAddressLabel = location.currentAddress;
-        });
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
-    final location = Provider.of<LocationProvider>(context);
     
-    // Keep internal state in sync if provider updates (e.g. background detection)
-    if (_selectedAddressId == null && location.selectedAddressId != null) {
-      _selectedAddressId = location.selectedAddressId;
-      _selectedAddressLabel = location.currentAddress;
-    }
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -254,10 +145,80 @@ class _CartScreenState extends State<CartScreen> {
                   '${AppConstants.currency}${cartItem.item.price.toStringAsFixed(0)}',
                   style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.primary),
                 ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () => _showNotesDialog(context, cartItem, cart),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.sticky_note_2_rounded, size: 12, color: AppColors.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          cartItem.notes?.isEmpty ?? true ? 'Add Notes' : 'Edit Notes',
+                          style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.primary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (cartItem.notes != null && cartItem.notes!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    cartItem.notes!,
+                    style: GoogleFonts.poppins(fontSize: 10, fontStyle: FontStyle.italic, color: AppColors.textSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
           _buildCartQuantitySelector(cartItem, cart),
+        ],
+      ),
+    );
+  }
+
+  void _showNotesDialog(BuildContext context, CartItem cartItem, CartProvider cart) {
+    final controller = TextEditingController(text: cartItem.notes);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Cooking Instructions', style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 18)),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          autofocus: true,
+          style: GoogleFonts.poppins(fontSize: 14),
+          decoration: InputDecoration(
+            hintText: 'e.g. Extra spicy, No onions...',
+            hintStyle: GoogleFonts.poppins(color: AppColors.textPlaceholder),
+            filled: true,
+            fillColor: AppColors.surface1,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: GoogleFonts.poppins(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              cart.updateNotes(cartItem.item.id, controller.text.trim());
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            child: const Text('Save'),
+          ),
         ],
       ),
     );
@@ -325,51 +286,47 @@ class _CartScreenState extends State<CartScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Premium Address Selector
-          GestureDetector(
-            onTap: _selectAddress,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Theme.of(context).dividerColor),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                    child: const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'DELIVERING TO',
-                          style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), letterSpacing: 0.5),
-                        ),
-                        Text(
-                          _selectedAddressLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5, color: Theme.of(context).colorScheme.onSurface),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.expand_more_rounded, color: AppColors.textSecondary),
-                ],
-              ),
-            ).animate().slideY(begin: 0.5, end: 0).fadeIn(),
-          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Theme.of(context).dividerColor),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.restaurant_rounded, color: AppColors.primary, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Consumer<TableProvider>(
+                  builder: (context, table, _) {
+                    return Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'DINING STATUS',
+                            style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), letterSpacing: 0.5),
+                          ),
+                          Text(
+                            table.hasTable ? 'Dine-in at Table #${table.activeTableNumber}' : 'Dine-in Service',
+                            style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5, color: Theme.of(context).colorScheme.onSurface),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                ),
+              ],
+            ),
+          ).animate().slideY(begin: 0.5, end: 0).fadeIn(),
           const SizedBox(height: 24),
           
-          // Bill Summary (Surgical Style)
           _billRow('Subtotal', '${AppConstants.currency}${cart.totalAmount.toStringAsFixed(0)}'),
-          _billRow('Delivery Fee', 'FREE', isGreen: true),
+          _billRow('Tax & Service', 'Included', isGreen: true),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1, color: AppColors.surface3),
@@ -394,7 +351,6 @@ class _CartScreenState extends State<CartScreen> {
           ),
           const SizedBox(height: 24),
           
-          // Ultimate Place Order Button
           Container(
             height: 64,
             width: double.infinity,
@@ -465,18 +421,8 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    if (_selectedAddressId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select delivery address'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      return;
-    }
-
     final cart = Provider.of<CartProvider>(context, listen: false);
+    final table = Provider.of<TableProvider>(context, listen: false);
     
     final paymentMethod = await Navigator.push(
       context,
@@ -492,10 +438,11 @@ class _CartScreenState extends State<CartScreen> {
         'menuItemId': ci.item.id,
         'quantity': ci.quantity,
         'price': ci.item.price,
+        'notes': ci.notes,
       }).toList(),
       'totalPrice': cart.totalAmount,
-      'deliveryType': 'DELIVERY',
-      'addressId': _selectedAddressId,
+      'deliveryType': 'DINE_IN',
+      'tableId': table.activeTableId,
       'paymentMethod': paymentMethod,
     };
 
@@ -552,4 +499,3 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 }
-

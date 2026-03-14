@@ -5,31 +5,43 @@ import {
   Trash2, 
   QrCode, 
   Users, 
-  RefreshCw, 
-  CheckCircle2, 
-  XCircle,
+  RefreshCw,
   LayoutGrid,
-  Search
+  Search,
+  Calendar
 } from 'lucide-react';
 
 const TableManagement = () => {
   const [tables, setTables] = useState<any[]>([]);
+  const [reservations, setReservations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTable, setNewTable] = useState({ tableNumber: '', capacity: 4 });
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fixed restaurantId for now, will be dynamic from Auth/Context
-  const restaurantId = "default-restaurant-id"; 
+  // Removed restaurantId for single-restaurant model
 
   useEffect(() => {
     fetchTables();
+    fetchReservations();
   }, []);
+
+  const fetchReservations = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('http://localhost:5000/api/reservations', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setReservations(res.data);
+    } catch (err) {
+      console.error('Failed to fetch reservations', err);
+    }
+  };
 
   const fetchTables = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/tables/${restaurantId}`);
+      const res = await axios.get(`http://localhost:5000/api/tables`);
       setTables(res.data);
     } catch (err) {
       console.error(err);
@@ -41,10 +53,7 @@ const TableManagement = () => {
   const handleAddTable = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/tables', {
-        ...newTable,
-        restaurantId
-      });
+      await axios.post('http://localhost:5000/api/tables', newTable);
       setShowAddModal(false);
       setNewTable({ tableNumber: '', capacity: 4 });
       fetchTables();
@@ -66,6 +75,10 @@ const TableManagement = () => {
   const filteredTables = tables.filter(t => 
     t.tableNumber.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getTableReservation = (tableId: string) => {
+    return reservations.find(r => r.tableId === tableId && (r.status === 'CONFIRMED' || r.status === 'PENDING'));
+  };
 
   return (
     <div className="space-y-6">
@@ -102,13 +115,19 @@ const TableManagement = () => {
             <div className="flex items-start justify-between relative z-10">
               <div className="space-y-1">
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                  table.status === 'AVAILABLE' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'
+                  table.status === 'AVAILABLE' ? (getTableReservation(table.id) ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600') : 'bg-orange-50 text-orange-600'
                 }`}>
-                  {table.status}
+                  {table.status === 'AVAILABLE' && getTableReservation(table.id) ? 'RESERVED' : table.status}
                 </span>
                 <h3 className="text-3xl font-black text-gray-900 tracking-tighter">Table {table.tableNumber}</h3>
                 <div className="flex items-center gap-4 text-gray-400 text-xs font-bold">
                   <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {table.capacity} Seats</span>
+                  {getTableReservation(table.id) && (
+                    <span className="flex items-center gap-1 text-blue-500">
+                      <Calendar className="h-3 w-3" /> 
+                      {getTableReservation(table.id)?.time}
+                    </span>
+                  )}
                 </div>
               </div>
               <button 

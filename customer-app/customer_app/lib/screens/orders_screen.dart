@@ -285,7 +285,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.textSecondary, letterSpacing: 0.5),
                       ),
                       Text(
-                        '${AppConstants.currency}${order['totalPrice']}',
+                        '${AppConstants.currency}${order['grandTotal'] ?? 0}',
                         style: GoogleFonts.poppins(
                           color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w900,

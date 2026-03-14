@@ -31,7 +31,7 @@ router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), upload.single('ima
 
       stream.on('finish', async () => {
         await fileUpload.makePublic();
-        const imageUrl = `https://storage.googleapis.com/${bucket.name}/${fileUpload.name}`;
+        const imageUrl = `https://storage.googleapis.com/${bucket?.name}/${fileUpload.name}`;
         res.json({ imageUrl });
       });
 

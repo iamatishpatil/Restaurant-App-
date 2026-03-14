@@ -12,14 +12,13 @@ import '../widgets/search_bar.dart';
 import '../widgets/banner_widget.dart';
 import '../widgets/shimmer_widget.dart';
 import '../utils/constants.dart';
-import '../providers/location_provider.dart';
 import '../providers/mode_provider.dart';
-import '../widgets/location_selector_sheet.dart';
-import '../widgets/location_permission_dialog.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'profile_screen.dart';
-import '../providers/mode_provider.dart';
+import 'notifications_screen.dart';
+import '../providers/table_provider.dart';
+import 'qr_scanner_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -40,32 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final location = Provider.of<LocationProvider>(context, listen: false);
-      
-      // Auto-detect live location on first load
-      if (!location.isLocationSet) {
-        location.determinePosition().then((_) {
-          // If after detection it's still not set, show picker
-          if (!location.isLocationSet && mounted && !location.hasPermissionError) {
-            showModalBottomSheet(
-              context: context,
-              backgroundColor: Colors.transparent,
-              isScrollControlled: true,
-              builder: (context) => const LocationSelectorSheet(),
-            );
-          }
-        }).catchError((e) {
-          if (mounted && location.hasPermissionError) {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) => const LocationPermissionDialog(),
-            );
-          }
-        });
-      }
-    });
     _fetchInitialData();
   }
 
@@ -129,54 +102,78 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Consumer<LocationProvider>(
-          builder: (context, location, _) => GestureDetector(
-            onTap: () {
-              showModalBottomSheet(
-                context: context,
-                backgroundColor: Colors.transparent,
-                isScrollControlled: true,
-                builder: (context) => const LocationSelectorSheet(),
-              );
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      'DELIVERING TO',
-                      style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    Icon(Icons.keyboard_arrow_down_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), size: 16),
-                  ],
-                ),
-                Text(
-                  location.currentAddress, 
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'CRAVYO',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: AppColors.primary,
+                letterSpacing: 2,
+              ),
             ),
-          ),
+            Text(
+              'Premium Dining',
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              ),
+            ),
+          ],
         ),
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Theme.of(context).scaffoldBackgroundColor,
         actions: [
+          GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Theme.of(context).dividerColor),
+              ),
+              child: Icon(Icons.notifications_none_rounded, color: Theme.of(context).colorScheme.onSurface, size: 22),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QRScannerScreen())),
+            child: Consumer<TableProvider>(
+              builder: (context, table, _) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: table.hasTable ? const Color(0xFF2D4B1F).withOpacity(0.1) : Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: table.hasTable ? const Color(0xFF2D4B1F).withOpacity(0.3) : Theme.of(context).dividerColor),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        table.hasTable ? Icons.table_restaurant_rounded : Icons.qr_code_scanner_rounded, 
+                        color: table.hasTable ? const Color(0xFF2D4B1F) : Theme.of(context).colorScheme.onSurface, 
+                        size: 20
+                      ),
+                      if (table.hasTable) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          '#${table.activeTableNumber}',
+                          style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF2D4B1F)),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }
+            ),
+          ),
           GestureDetector(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
             child: Container(

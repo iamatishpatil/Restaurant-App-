@@ -90,11 +90,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Widget _buildLottieHeader() {
-    String lottieUrl = 'https://assets9.lottiefiles.com/packages/lf20_jmejebmv.json'; // Delivery packing
-    if (currentStatus == 'OUT_FOR_DELIVERY') {
-      lottieUrl = 'https://assets5.lottiefiles.com/packages/lf20_6p87kbv8.json'; // Delivery bike
-    } else if (currentStatus == 'DELIVERED') {
-      lottieUrl = 'https://assets10.lottiefiles.com/packages/lf20_pqnfmone.json'; // Success/Delivered
+    String lottieUrl = 'https://assets9.lottiefiles.com/packages/lf20_jmejebmv.json'; // Cooking/Packing
+    if (currentStatus == 'READY') {
+      lottieUrl = 'https://assets10.lottiefiles.com/packages/lf20_pqnfmone.json'; // Ready/Check
+    } else if (currentStatus == 'SERVED' || currentStatus == 'COMPLETED') {
+      lottieUrl = 'https://assets10.lottiefiles.com/packages/lf20_pqnfmone.json'; // Success
     }
 
     return Container(
@@ -106,7 +106,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       ),
       child: Lottie.network(
         lottieUrl,
-        errorBuilder: (context, error, stackTrace) => const Icon(Icons.delivery_dining_rounded, size: 80, color: AppColors.primary),
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.restaurant_rounded, size: 80, color: AppColors.primary),
       ),
     );
   }
@@ -150,14 +150,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       children: [
         _buildStep('Order Placed', 'We have received your order', true, isFirst: true),
         _buildStep('Preparing', 'Our chef is preparing your meal', _isStepActive('PREPARING')),
-        _buildStep('Out for Delivery', 'Your meal is on the way', _isStepActive('OUT_FOR_DELIVERY')),
-        _buildStep('Delivered', 'Enjoy your delicious meal!', _isStepActive('DELIVERED'), isLast: true),
+        _buildStep('Ready to Serve', 'Your meal is ready to be served', _isStepActive('READY')),
+        _buildStep('Served', 'Enjoy your delicious meal!', _isStepActive('SERVED'), isLast: true),
       ],
     );
   }
 
   bool _isStepActive(String step) {
-    List<String> statuses = ['PENDING', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+    List<String> statuses = ['NEW_ORDER', 'ACCEPTED', 'PREPARING', 'READY', 'SERVED', 'COMPLETED', 'CANCELLED'];
     int currentIndex = statuses.indexOf(currentStatus);
     int stepIndex = statuses.indexOf(step);
     return currentIndex >= stepIndex;

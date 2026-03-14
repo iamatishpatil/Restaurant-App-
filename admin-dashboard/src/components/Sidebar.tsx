@@ -17,7 +17,8 @@ import {
   LayoutGrid,
   ChefHat,
   BellRing,
-  Printer as PrinterIcon
+  Printer as PrinterIcon,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -38,6 +39,7 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (val: bool
     { to: '/customers', icon: Users, label: 'Customers', color: 'text-indigo-400', roles: ['ADMIN', 'MANAGER'] },
     { to: '/coupons', icon: Tag, label: 'Coupons', color: 'text-red-400', roles: ['ADMIN', 'MANAGER'] },
     { to: '/reviews', icon: MessageSquare, label: 'Reviews', color: 'text-teal-400', roles: ['ADMIN', 'MANAGER'] },
+    { to: '/reservations', icon: Calendar, label: 'Reservations', color: 'text-indigo-400', roles: ['ADMIN', 'MANAGER'] },
     { to: '/printers', icon: PrinterIcon, label: 'Printer Setup', color: 'text-gray-300', roles: ['ADMIN', 'MANAGER'] },
     { to: '/settings', icon: Settings, label: 'Settings', color: 'text-gray-400', roles: ['ADMIN', 'MANAGER'] },
   ];

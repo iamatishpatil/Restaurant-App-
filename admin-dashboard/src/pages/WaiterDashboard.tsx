@@ -34,7 +34,7 @@ const WaiterDashboard = () => {
       const [ordersRes, menuRes, tablesRes] = await Promise.all([
         axios.get('http://localhost:5000/api/orders', config),
         axios.get('http://localhost:5000/api/admin/menu', config),
-        axios.get('http://localhost:5000/api/tables/global', config) // Assuming a global restaurant ID for now or findFirst
+        axios.get('http://localhost:5000/api/tables', config)
       ]);
       
       setAllOrders(ordersRes.data.filter((o: any) => o.status !== 'COMPLETED'));

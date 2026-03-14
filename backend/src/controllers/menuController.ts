@@ -18,7 +18,7 @@ export const getMenuItems = async (req: Request, res: Response) => {
     const { categoryId } = req.query;
     const items = await prisma.menuItem.findMany({
       where: categoryId ? { categoryId: String(categoryId) } : {},
-      include: { category: true },
+      include: { category: true, recipeIngredients: { include: { inventory: true } } },
       orderBy: { name: 'asc' }
     });
     res.json(items);
@@ -43,10 +43,19 @@ export const getMenuItemById = async (req: Request, res: Response) => {
 
 export const createMenuItem = async (req: Request, res: Response) => {
   try {
-    const { name, description, price, categoryId, isVeg, image, preparationTime, availability } = req.body;
-    const item = await prisma.menuItem.create({
-      data: { name, description, price, categoryId, isVeg, image, preparationTime, availability },
-    });
+    const { name, description, price, categoryId, isVeg, isVegan, isGlutenFree, isSpicy, image, preparationTime, availability, recipeIngredients } = req.body;
+    
+    const data: any = { name, description, price, categoryId, isVeg, isVegan, isGlutenFree, isSpicy, image, preparationTime, availability };
+    if (recipeIngredients && Array.isArray(recipeIngredients) && recipeIngredients.length > 0) {
+      data.recipeIngredients = {
+        create: recipeIngredients.map((r: any) => ({
+          inventoryId: r.inventoryId,
+          quantity: r.quantity
+        }))
+      };
+    }
+    
+    const item = await prisma.menuItem.create({ data });
     res.status(201).json(item);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -56,10 +65,23 @@ export const createMenuItem = async (req: Request, res: Response) => {
 export const updateMenuItem = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, price, categoryId, isVeg, image, preparationTime, availability } = req.body;
+    const { name, description, price, categoryId, isVeg, isVegan, isGlutenFree, isSpicy, image, preparationTime, availability, recipeIngredients } = req.body;
+    
+    await prisma.recipeIngredient.deleteMany({ where: { menuItemId: id as string } });
+    
+    const data: any = { name, description, price, categoryId, isVeg, isVegan, isGlutenFree, isSpicy, image, preparationTime, availability };
+    if (recipeIngredients && Array.isArray(recipeIngredients) && recipeIngredients.length > 0) {
+      data.recipeIngredients = {
+        create: recipeIngredients.map((r: any) => ({
+          inventoryId: r.inventoryId,
+          quantity: r.quantity
+        }))
+      };
+    }
+
     const item = await prisma.menuItem.update({
       where: { id: id as string },
-      data: { name, description, price, categoryId, isVeg, image, preparationTime, availability },
+      data,
     });
     res.json(item);
   } catch (error: any) {

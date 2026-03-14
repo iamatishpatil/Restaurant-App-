@@ -4,14 +4,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
-import 'providers/location_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/mode_provider.dart';
+import 'providers/table_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/orders_screen.dart';
 import 'screens/profile_screen.dart';
-import 'screens/location_setup_screen.dart';
+import 'screens/reservations_screen.dart';
 import 'providers/theme_provider.dart';
 import 'utils/theme.dart';
 import 'utils/constants.dart';
@@ -22,10 +22,10 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
-        ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => ModeProvider()),
+        ChangeNotifierProvider(create: (_) => TableProvider()),
       ],
       child: const MyApp(),
     ),
@@ -65,6 +65,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
+    const ReservationsScreen(),
     const CartScreen(),
     const OrdersScreen(),
   ];
@@ -158,8 +159,9 @@ class _MainScreenState extends State<MainScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _navItem(0, Icons.home_outlined, Icons.home_rounded, 'Home', nav),
-          _navItem(1, Icons.shopping_cart_outlined, Icons.shopping_cart_rounded, 'Cart', nav),
-          _navItem(2, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders', nav),
+          _navItem(1, Icons.event_seat_outlined, Icons.event_seat_rounded, 'Book', nav),
+          _navItem(2, Icons.shopping_cart_outlined, Icons.shopping_cart_rounded, 'Cart', nav),
+          _navItem(3, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders', nav),
         ],
       ),
     );
@@ -174,8 +176,8 @@ class _MainScreenState extends State<MainScreen> {
       size: 22,
     );
 
-    // Apply badge conditionally on Cart (index 1)
-    if (index == 1) {
+    // Apply badge conditionally on Cart (index 2 now)
+    if (index == 2) {
       iconWidget = Consumer<CartProvider>(
         builder: (context, cart, child) {
           if (cart.items.isEmpty) return child!;

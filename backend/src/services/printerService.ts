@@ -125,7 +125,7 @@ export class PrinterService {
         orderItems: { include: { menuItem: true } },
         table: true,
         user: true,
-        payment: true
+        payments: true
       }
     });
 
@@ -167,9 +167,9 @@ export class PrinterService {
       result = result.text(`${name}${qty}${price}${total}`).newline();
     });
 
-    const subtotal = Number(order.totalPrice);
-    const tax = subtotal * 0.05; // 5% tax example
-    const total = subtotal + tax;
+    const subtotal = Number(order.subtotal);
+    const tax = Number(order.taxAmount);
+    const total = Number(order.grandTotal);
 
     result = result
       .text('--------------------------------')

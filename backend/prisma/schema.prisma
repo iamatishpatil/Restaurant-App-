@@ -39,22 +39,8 @@ model User {
   orders        Order[]
   reviews       Review[]
   favorites     Favorite[]
-}
-
-model Restaurant {
-  id          String   @id @default(uuid())
-  name        String
-  address     String
-  phone       String
-  email       String
-  logo        String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  tables      Table[]
-  categories  MenuCategory[]
-  staff       Staff[]
-  printers    Printer[]
+  reservations  Reservation[]
+  notifications Notification[]
 }
 
 model Table {
@@ -63,13 +49,12 @@ model Table {
   capacity     Int
   status       String     @default("AVAILABLE") // AVAILABLE, OCCUPIED, RESERVED
   qrCode       String?    // URL or Data for the QR
-  restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   orders       Order[]
+  reservations Reservation[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  @@unique([restaurantId, tableNumber])
+  @@unique([tableNumber])
 }
 
 model Address {
@@ -90,8 +75,6 @@ model MenuCategory {
   id           String     @id @default(uuid())
   name         String
   image        String?
-  restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   items        MenuItem[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -104,6 +87,9 @@ model MenuItem {
   price           Decimal
   image           String?
   isVeg           Boolean        @default(true)
+  isVegan         Boolean        @default(false)
+  isGlutenFree    Boolean        @default(false)
+  isSpicy         Boolean        @default(false)
   preparationTime Int?           // in minutes
   availability    Boolean        @default(true)
   categoryId      String
@@ -112,6 +98,7 @@ model MenuItem {
   orderItems      OrderItem[]
   favorites       Favorite[]
   reviews         Review[]
+  recipeIngredients RecipeIngredient[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
@@ -132,13 +119,20 @@ model Order {
   tableId        String?
   table          Table?           @relation(fields: [tableId], references: [id])
   status         OrderStatus      @default(NEW_ORDER)
-  totalPrice     Decimal
+  
+  subtotal       Decimal          @default(0.0)
+  taxAmount      Decimal          @default(0.0)
+  deliveryFee    Decimal          @default(0.0)
+  discountAmount Decimal          @default(0.0)
+  grandTotal     Decimal
+
   notes          String?
   deliveryType   String           @default("DINE_IN") // DINE_IN, DELIVERY, PICKUP
   addressId      String?
   address        Address?         @relation(fields: [addressId], references: [id])
-  paymentId      String?          @unique
-  payment        Payment?         @relation(fields: [paymentId], references: [id])
+  
+  payments       Payment[]
+  
   orderItems     OrderItem[]
   statusLogs     OrderStatusLog[]
   createdAt      DateTime         @default(now())
@@ -169,7 +163,8 @@ model OrderStatusLog {
 
 model Payment {
   id            String   @id @default(uuid())
-  order         Order?
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
   method        String   // UPI, CARD, CASH, IN_APP
   status        String   @default("PENDING") // PENDING, COMPLETED, FAILED
   transactionId String?
@@ -183,8 +178,6 @@ model Staff {
   email        String           @unique
   password     String
   role         Role
-  restaurantId String?
-  restaurant   Restaurant?      @relation(fields: [restaurantId], references: [id])
   statusLogs   OrderStatusLog[]
   isActive     Boolean          @default(true)
   createdAt    DateTime         @default(now())
@@ -196,8 +189,6 @@ model Printer {
   name         String
   type         String     // LAN, USB, BLUETOOTH
   connection   String     // IP address, USB port, etc.
-  restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   usage        String     // KITCHEN, BILLING
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -236,6 +227,7 @@ model Inventory {
   itemName  String   @unique
   quantity  Float
   unit      String   // kg, l, pcs
+  recipeIngredients RecipeIngredient[]
   updatedAt DateTime @updatedAt
 }
 
@@ -245,8 +237,21 @@ model Settings {
   contactPhone      String   @default("+1 (555) 000-1111")
   businessEmail     String   @default("hello@gourmetkitchen.com")
   storeAddress      String   @default("123 Culinary Ave, Foodie City, FC 54321")
+  
+  latitude          Float?   
+  longitude         Float?   
+  deliveryRadiusKm  Float    @default(5.0)
+  minOrderValue     Decimal  @default(0.0)
+  
+  currency          String   @default("INR") // e.g., INR, USD
+  taxRate           Float    @default(5.0)   // e.g., 5% GST
+  taxId             String?  // FSSAI or GSTIN for bills
+  
+  isOpen            Boolean  @default(true)  // Can users place orders RIGHT NOW?
   acceptingOrders   Boolean  @default(true)
   pushNotifications Boolean  @default(true)
+  logo              String?  
+  
   updatedAt         DateTime @updatedAt
 }
 
@@ -258,4 +263,48 @@ model Coupon {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model RecipeIngredient {
+  id           String    @id @default(uuid())
+  menuItemId   String
+  menuItem     MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  inventoryId  String
+  inventory    Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  quantity     Float     // e.g., 0.1 kg, 2 pieces
+  createdAt    DateTime  @default(now())
+}
+
+model Reservation {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  tableId        String?
+  table          Table?   @relation(fields: [tableId], references: [id])
+  date           DateTime 
+  time           String   // e.g., "19:00"
+  partySize      Int
+  status         String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  specialRequest String?
+  rejectionReason String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String   // RESERVATION, ORDER, PROMO
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+model OTP {
+  id        String   @id @default(uuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }

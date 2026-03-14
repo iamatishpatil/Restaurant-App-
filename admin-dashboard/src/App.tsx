@@ -17,6 +17,7 @@ import KDSPage from './pages/KDSPage';
 import WaiterDashboard from './pages/WaiterDashboard';
 import PrinterSettings from './pages/PrinterSettings';
 import SettingsPage from './pages/SettingsPage';
+import ReservationManagement from './pages/ReservationManagement';
 import AdminLayout from './components/AdminLayout';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
@@ -56,6 +57,7 @@ function App() {
             <Route path="staff" element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}><StaffManagement /></ProtectedRoute>} />
             <Route path="customers" element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}><CustomerManagement /></ProtectedRoute>} />
             <Route path="reviews" element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}><ReviewModeration /></ProtectedRoute>} />
+            <Route path="reservations" element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}><ReservationManagement /></ProtectedRoute>} />
             <Route path="settings" element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}><SettingsPage /></ProtectedRoute>} />
           </Route>
         </Routes>

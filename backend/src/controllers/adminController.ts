@@ -16,16 +16,8 @@ export const getCategories = async (req: Request, res: Response) => {
 
 export const createCategory = async (req: Request, res: Response) => {
   try {
-    let { restaurantId, ...data } = req.body;
-    if (!restaurantId) {
-      const rest = await prisma.restaurant.findFirst();
-      restaurantId = rest?.id;
-    }
-    if (!restaurantId) {
-      return res.status(400).json({ message: "No restaurant found. Create a restaurant first." });
-    }
     const category = await prisma.menuCategory.create({ 
-      data: { ...data, restaurantId } 
+      data: req.body
     });
     res.status(201).json(category);
   } catch (error: any) {
@@ -167,7 +159,7 @@ export const getAnalytics = async (req: Request, res: Response) => {
       include: { reviews: true }
     });
 
-    const totalRevenue = orders.reduce((acc, order) => acc + Number(order.totalPrice), 0);
+    const totalRevenue = orders.reduce((acc, order) => acc + Number(order.grandTotal), 0);
     // Active orders are anything not COMPLETED or CANCELLED
     const activeOrders = orders.filter(o => !['COMPLETED', 'CANCELLED'].includes(o.status)).length;
     const newCustomers = users.length;
@@ -235,7 +227,7 @@ export const getAnalytics = async (req: Request, res: Response) => {
       const orderDateStr = new Date(order.createdAt).toDateString();
       const dayData = last7Days.find(d => d.dateStr === orderDateStr);
       if (dayData) {
-        dayData.revenue += Number(order.totalPrice);
+        dayData.revenue += Number(order.grandTotal);
         dayData.orders += 1;
       }
     });
@@ -310,24 +302,13 @@ export const getPrinters = async (req: Request, res: Response) => {
 
 export const createPrinter = async (req: Request, res: Response) => {
   try {
-    const { name, type, connection, usage, restaurantId } = req.body;
-    let targetRestaurantId = restaurantId;
-    if (!targetRestaurantId) {
-      const rest = await prisma.restaurant.findFirst();
-      targetRestaurantId = rest?.id;
-    }
-
-    if (!targetRestaurantId) {
-      return res.status(400).json({ message: "No restaurant found. Create a restaurant first." });
-    }
-
+    const { name, type, connection, usage } = req.body;
     const printer = await prisma.printer.create({
       data: {
         name,
         type,
         connection,
-        usage,
-        restaurantId: targetRestaurantId
+        usage
       }
     });
     res.status(201).json(printer);

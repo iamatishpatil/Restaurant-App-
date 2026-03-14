@@ -232,7 +232,7 @@ async function main() {
   await prisma.inventory.deleteMany();
   await prisma.staff.deleteMany();
   await prisma.menuItem.deleteMany();
-  await prisma.category.deleteMany();
+  await prisma.menuCategory.deleteMany();
   await prisma.user.deleteMany();
 
   const hash = await bcrypt.hash('123456', 10);
@@ -268,7 +268,7 @@ async function main() {
   console.log('🏷️  Creating categories...');
   const catMap: Record<string, string> = {};
   for (const cat of categories) {
-    const created = await prisma.category.create({ data: cat });
+    const created = await prisma.menuCategory.create({ data: cat });
     catMap[cat.name] = created.id;
   }
   console.log(`   ✓ ${categories.length} categories`);
@@ -284,8 +284,7 @@ async function main() {
         price: dish.price,
         image: dish.image,
         isVeg: dish.isVeg,
-        rating: dish.rating,
-        isAvailable: true,
+        availability: true,
         categoryId: catMap[dish.cat],
       }
     });
@@ -316,7 +315,6 @@ async function main() {
       data: {
         code: c.code,
         discount: c.discount,
-        type: c.type,
         expiryDate: futureDays(c.expiryDays),
         isActive: c.isActive,
       }
@@ -353,8 +351,8 @@ async function main() {
   // 9. ORDERS + PAYMENTS
   console.log('🛒 Creating orders...');
   const statuses = [
-    OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.OUT_FOR_DELIVERY,
-    OrderStatus.DELIVERED, OrderStatus.CANCELLED
+    OrderStatus.NEW_ORDER, OrderStatus.PREPARING, OrderStatus.READY,
+    OrderStatus.COMPLETED, OrderStatus.CANCELLED
   ];
   let orderCount = 0;
   for (let i = 0; i < 60; i++) {
@@ -370,15 +368,18 @@ async function main() {
       price: Number(m.price),
     }));
 
-    const totalPrice = orderItemsData2.reduce((s, it) => s + it.price * it.quantity, 0);
+    const subtotal = orderItemsData2.reduce((s, it) => s + it.price * it.quantity, 0);
+    const taxAmount = subtotal * 0.05;
+    const grandTotal = subtotal + taxAmount;
     const status = pick(statuses);
 
     const order = await prisma.order.create({
       data: {
         userId: user.id,
         status,
-        totalPrice,
-        totalItems: itemCount,
+        subtotal,
+        taxAmount,
+        grandTotal,
         deliveryType,
         addressId: deliveryType === 'DELIVERY' && userAddrs.length ? pick(userAddrs) : undefined,
         createdAt: pastDays(randInt(0, 30)),
@@ -386,16 +387,16 @@ async function main() {
       }
     });
 
-    if (status !== OrderStatus.PENDING && status !== OrderStatus.CANCELLED) {
-      const payment = await prisma.payment.create({
+    if (status !== OrderStatus.NEW_ORDER && status !== OrderStatus.CANCELLED) {
+      await prisma.payment.create({
         data: {
+          orderId: order.id,
           method: pick(['UPI', 'CARD', 'COD', 'NETBANKING']),
           status: 'COMPLETED',
-          amount: totalPrice,
+          amount: grandTotal,
           transactionId: `TXN${Date.now()}${randInt(1000, 9999)}`,
         }
       });
-      await prisma.order.update({ where: { id: order.id }, data: { paymentId: payment.id } });
     }
     orderCount++;
   }

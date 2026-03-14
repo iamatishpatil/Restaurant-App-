@@ -13,6 +13,7 @@ const MenuManagement = () => {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [inventoryItems, setInventoryItems] = useState([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -20,9 +21,13 @@ const MenuManagement = () => {
     price: '',
     categoryId: '',
     isVeg: true,
+    isVegan: false,
+    isGlutenFree: false,
+    isSpicy: false,
     availability: true,
     image: '',
     preparationTime: '',
+    recipeIngredients: [] as {inventoryId: string, quantity: number}[]
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -36,12 +41,14 @@ const MenuManagement = () => {
     try {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const [itemsRes, catRes] = await Promise.all([
+      const [itemsRes, catRes, invRes] = await Promise.all([
         axios.get('http://localhost:5000/api/admin/menu', config),
-        axios.get('http://localhost:5000/api/admin/categories', config)
+        axios.get('http://localhost:5000/api/admin/categories', config),
+        axios.get('http://localhost:5000/api/admin/inventory', config)
       ]);
       setItems(itemsRes.data);
       setCategories(catRes.data);
+      setInventoryItems(invRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -73,7 +80,7 @@ const MenuManagement = () => {
       setIsModalOpen(false);
       setEditingItem(null);
       setEditingId(null);
-      setFormData({ name: '', description: '', price: '', categoryId: '', isVeg: true, availability: true, image: '', preparationTime: '' });
+      setFormData({ name: '', description: '', price: '', categoryId: '', isVeg: true, isVegan: false, isGlutenFree: false, isSpicy: false, availability: true, image: '', preparationTime: '', recipeIngredients: [] });
     } catch (err) {
       console.error(err);
       alert('Failed to save dish');
@@ -164,8 +171,11 @@ const MenuManagement = () => {
                       </div>
                       <div>
                         <p className="font-semibold text-gray-800">{item.name}</p>
-                        <p className={`text-xs ${item.isVeg ? 'text-green-600' : 'text-red-600'}`}>
-                          {item.isVeg ? 'Veg' : 'Non-Veg'}
+                        <p className={`text-xs ${item.isVeg ? 'text-green-600' : 'text-red-600'} mt-1`}>
+                          {item.isVeg ? 'Veg ' : 'Non-Veg '}
+                          {item.isVegan && <span className="ml-1 px-1 bg-green-100 text-green-700 rounded border border-green-200">Vegan</span>}
+                          {item.isGlutenFree && <span className="ml-1 px-1 bg-yellow-100 text-yellow-700 rounded border border-yellow-200">GF</span>}
+                          {item.isSpicy && <span className="ml-1 px-1 bg-red-100 text-red-700 rounded border border-red-200">Spicy</span>}
                         </p>
                       </div>
                     </div>
@@ -180,7 +190,16 @@ const MenuManagement = () => {
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button 
-                        onClick={() => { setEditingItem(item); setFormData({ ...item, preparationTime: item.preparationTime || '' }); setIsModalOpen(true); }}
+                        onClick={() => { 
+                          setEditingItem(item); 
+                          setEditingId(item.id); 
+                          setFormData({ 
+                            ...item, 
+                            preparationTime: item.preparationTime || '',
+                            recipeIngredients: item.recipeIngredients?.map((r: any) => ({ inventoryId: r.inventoryId, quantity: r.quantity })) || []
+                          }); 
+                          setIsModalOpen(true); 
+                        }}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                       >
                         <Edit className="h-4 w-4" />
@@ -272,16 +291,57 @@ const MenuManagement = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                   <textarea disabled={user?.role === 'CHEF'} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-primary h-24 disabled:bg-gray-50" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})}></textarea>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex flex-wrap items-center gap-6 mt-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" disabled={user?.role === 'CHEF'} checked={formData.isVeg} onChange={(e) => setFormData({...formData, isVeg: e.target.checked})} />
                     <span className="text-sm font-medium text-gray-700">Vegetarian</span>
                   </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={formData.availability} onChange={(e) => setFormData({...formData, availability: e.target.checked})} />
-                  <span className="text-sm font-medium text-gray-700">Available to Order</span>
-                </label>
-              </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" disabled={user?.role === 'CHEF'} checked={formData.isVegan} onChange={(e) => setFormData({...formData, isVegan: e.target.checked})} />
+                    <span className="text-sm font-medium text-gray-700">Vegan</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" disabled={user?.role === 'CHEF'} checked={formData.isGlutenFree} onChange={(e) => setFormData({...formData, isGlutenFree: e.target.checked})} />
+                    <span className="text-sm font-medium text-gray-700">Gluten-Free</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" disabled={user?.role === 'CHEF'} checked={formData.isSpicy} onChange={(e) => setFormData({...formData, isSpicy: e.target.checked})} />
+                    <span className="text-sm font-medium text-gray-700">Spicy</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer ml-auto border pl-4 border-gray-100 py-1">
+                    <input type="checkbox" checked={formData.availability} onChange={(e) => setFormData({...formData, availability: e.target.checked})} />
+                    <span className="text-sm font-bold text-gray-900">Available to Order</span>
+                  </label>
+                </div>
+                
+                <div className={user?.role === 'CHEF' ? 'hidden' : 'col-span-2 border-t border-gray-100 pt-4 mt-4'}>
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="block text-sm font-bold text-gray-700">Recipe Ingredients (BOM Tracker)</label>
+                    <button type="button" onClick={() => setFormData({...formData, recipeIngredients: [...formData.recipeIngredients, {inventoryId: '', quantity: 1}]})} className="text-xs bg-red-50 text-red-600 px-3 py-1 rounded-lg font-bold border border-red-100 hover:bg-red-100">+ Add Ingredient</button>
+                  </div>
+                  {formData.recipeIngredients.map((ing, idx) => (
+                    <div key={idx} className="flex gap-2 mb-2 items-center">
+                      <select className="flex-1 px-3 py-2 border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-primary text-sm" value={ing.inventoryId} onChange={(e) => {
+                         const updated = [...formData.recipeIngredients];
+                         updated[idx].inventoryId = e.target.value;
+                         setFormData({...formData, recipeIngredients: updated});
+                      }}>
+                        <option value="">Select Inventory Item</option>
+                        {inventoryItems.map((inv: any) => <option key={inv.id} value={inv.id}>{inv.itemName} ({inv.unit})</option>)}
+                      </select>
+                      <input type="number" step="0.01" className="w-24 px-3 py-2 border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-primary text-sm" placeholder="Qty" value={ing.quantity || ''} onChange={(e) => {
+                         const updated = [...formData.recipeIngredients];
+                         updated[idx].quantity = parseFloat(e.target.value) || 0;
+                         setFormData({...formData, recipeIngredients: updated});
+                      }} />
+                      <button type="button" onClick={() => {
+                         const updated = formData.recipeIngredients.filter((_, i) => i !== idx);
+                         setFormData({...formData, recipeIngredients: updated});
+                      }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  ))}
+                  {formData.recipeIngredients.length === 0 && <p className="text-xs text-gray-400 p-3 bg-gray-50 rounded-lg text-center border border-dashed border-gray-200">No ingredients linked. Stock will not auto-deduct following an order.</p>}
+                </div>
               <div className="flex justify-end gap-4 mt-8">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2 border rounded-lg hover:bg-gray-50 transition font-medium">Cancel</button>
                 <button type="submit" disabled={isLoading} className="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-red-600 transition disabled:opacity-50">

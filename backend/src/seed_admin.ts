@@ -43,16 +43,12 @@ async function main() {
       {
         code: 'WELCOME50',
         discount: 50,
-        type: 'PERCENTAGE',
-        minOrderAmount: 100,
         expiryDate: new Date('2026-12-31'),
         isActive: true
       },
       {
         code: 'FOODE10',
         discount: 10,
-        type: 'PERCENTAGE',
-        minOrderAmount: 50,
         expiryDate: new Date('2026-06-30'),
         isActive: true
       }

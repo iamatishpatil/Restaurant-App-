@@ -9,10 +9,12 @@ const orderSchema = z.object({
   items: z.array(z.object({
     menuItemId: z.string(),
     quantity: z.number().min(1),
-    price: z.number()
+    price: z.number(),
+    notes: z.string().optional()
   })),
   totalPrice: z.number(),
-  deliveryType: z.enum(["DELIVERY", "PICKUP"]),
+  deliveryType: z.enum(["DELIVERY", "PICKUP", "DINE_IN"]),
+  tableId: z.string().optional(),
   addressId: z.string().optional(),
   paymentMethod: z.enum(["UPI", "CARD", "COD"]).default("UPI"),
 });
@@ -23,9 +25,32 @@ export const createOrder = async (req: any, res: Response) => {
     const userId = req.user.id;
 
     const order = await prisma.$transaction(async (tx) => {
-      // 1. Create Payment record first
-      const payment = await tx.payment.create({
+      // 1. Create Order
+      const newOrder = await tx.order.create({
         data: {
+          userId,
+          subtotal: totalPrice,
+          taxAmount: 0,
+          grandTotal: totalPrice,
+          deliveryType,
+          tableId: deliveryType === "DINE_IN" ? (req.body.tableId || null) : null,
+          addressId: deliveryType === "DELIVERY" ? addressId : null,
+          status: "NEW_ORDER",
+          orderItems: {
+            create: items.map((item: any) => ({
+              menuItemId: item.menuItemId,
+              quantity: item.quantity,
+              price: item.price,
+              notes: item.notes,
+            })),
+          },
+        }
+      });
+
+      // 2. Create Payment linked to Order
+      await tx.payment.create({
+        data: {
+          orderId: newOrder.id,
           method: paymentMethod as string,
           status: paymentMethod === "COD" ? "PENDING" : "COMPLETED",
           amount: totalPrice,
@@ -33,31 +58,17 @@ export const createOrder = async (req: any, res: Response) => {
         }
       });
 
-      // 2. Create Order linked to Payment
-      const newOrder = await tx.order.create({
-        data: {
-          userId,
-          totalPrice,
-          deliveryType,
-          addressId: deliveryType === "DELIVERY" ? addressId : null,
-          status: "NEW_ORDER",
-          paymentId: payment.id,
-          orderItems: {
-            create: items.map((item: any) => ({
-              menuItemId: item.menuItemId,
-              quantity: item.quantity,
-              price: item.price,
-            })),
-          },
-        },
+      // 3. Return full order payload
+      const fullOrder = await tx.order.findUnique({
+        where: { id: newOrder.id },
         include: { 
           orderItems: { include: { menuItem: true } }, 
-          payment: true,
+          payments: true,
           user: true,
           table: true 
         },
       });
-      return newOrder;
+      return fullOrder;
     });
 
     // Notify real-time subscribers
@@ -104,6 +115,15 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const { status } = req.body;
+    const userRole = (req as any).user?.role;
+
+    // RBAC: Enforce valid status transitions by role
+    if (userRole === "CHEF" && !["PREPARING", "READY"].includes(status)) {
+      return res.status(403).json({ message: "Chefs can only update status to PREPARING or READY" });
+    }
+    if (userRole === "WAITER" && !["SERVED", "COMPLETED"].includes(status)) {
+      return res.status(403).json({ message: "Waiters can only update status to SERVED or COMPLETED" });
+    }
     
     // Logic: If status is COMPLETED, also ensure payment status is UPDATED if it's COD
     const orderData: any = { status };
@@ -111,15 +131,35 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
        // Auto-update linked payment to COMPLETED
        await prisma.order.findUnique({
          where: { id },
-         include: { payment: true }
+         include: { payments: true }
        }).then(async (o) => {
-         if (o?.paymentId) {
+         const pendingPayment = o?.payments?.[0];
+         if (pendingPayment?.id) {
            await prisma.payment.update({
-             where: { id: o.paymentId },
+             where: { id: pendingPayment.id },
              data: { status: 'COMPLETED' }
            });
          }
        });
+
+       // Auto-deduct inventory (BOM tracker)
+       const orderToDeduct = await prisma.order.findUnique({
+         where: { id },
+         include: { orderItems: { include: { menuItem: { include: { recipeIngredients: true } } } } }
+       });
+       
+       if (orderToDeduct) {
+         for (const item of orderToDeduct.orderItems) {
+           const quantityOrdered = item.quantity;
+           for (const recipeRef of item.menuItem.recipeIngredients) {
+              const deductionAmount = recipeRef.quantity * quantityOrdered;
+              await prisma.inventory.update({
+                where: { id: recipeRef.inventoryId },
+                data: { quantity: { decrement: deductionAmount } }
+              });
+           }
+         }
+       }
     }
 
     const order = await prisma.order.update({
@@ -171,7 +211,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
       include: { 
         user: true, 
         address: true,
-        payment: true,
+        payments: true,
         orderItems: {
           include: {
             menuItem: true

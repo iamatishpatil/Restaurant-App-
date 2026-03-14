@@ -1,16 +1,16 @@
+// Dine-in optimized Order Management
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Eye,
   Clock,
   CheckCircle2,
-  Truck,
-  Package,
   ChefHat,
   ClipboardList,
   Search,
   XCircle,
-  RefreshCw
+  RefreshCw,
+  UtensilsCrossed
 } from 'lucide-react';
 import { formatINR } from '../utils/formatCurrency';
 
@@ -58,9 +58,8 @@ const OrderManagement = () => {
     switch (status) {
       case 'PENDING': return <Clock className="h-4 w-4 text-orange-500" />;
       case 'PREPARING': return <ChefHat className="h-4 w-4 text-blue-500" />;
-      case 'PACKING': return <Package className="h-4 w-4 text-purple-500" />;
-      case 'OUT_FOR_DELIVERY': return <Truck className="h-4 w-4 text-indigo-500" />;
-      case 'DELIVERED': return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case 'READY': return <UtensilsCrossed className="h-4 w-4 text-purple-500" />;
+      case 'SERVED': return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case 'CANCELLED': return <XCircle className="h-4 w-4 text-red-500" />;
 
       default: return <Clock className="h-4 w-4" />;
@@ -71,9 +70,9 @@ const OrderManagement = () => {
     PENDING: 1,
     PREPARING: 2,
     COOKING: 2,
-    PACKING: 2,
-    OUT_FOR_DELIVERY: 2,
-    DELIVERED: 3,
+    READY: 2,
+    SERVED: 3,
+    COMPLETED: 3,
     CANCELLED: 3,
   };
 
@@ -100,9 +99,9 @@ const OrderManagement = () => {
     PENDING:          { label: 'Pending',          bg: 'bg-yellow-50',  text: 'text-yellow-700' },
     PREPARING:        { label: 'Preparing',        bg: 'bg-blue-50',    text: 'text-blue-700' },
     COOKING:          { label: 'Cooking',          bg: 'bg-orange-50',  text: 'text-orange-700' },
-    PACKING:          { label: 'Packing',          bg: 'bg-purple-50',  text: 'text-purple-700' },
-    OUT_FOR_DELIVERY: { label: 'Out for Delivery', bg: 'bg-indigo-50',  text: 'text-indigo-700' },
-    DELIVERED:        { label: 'Delivered',        bg: 'bg-green-50',   text: 'text-green-700' },
+    READY:            { label: 'Ready to Serve',   bg: 'bg-purple-50',  text: 'text-purple-700' },
+    SERVED:           { label: 'Served',           bg: 'bg-green-50',   text: 'text-green-700' },
+    COMPLETED:        { label: 'Completed',        bg: 'bg-green-50',   text: 'text-green-700' },
     CANCELLED:        { label: 'Cancelled',        bg: 'bg-red-50',     text: 'text-red-700' },
   };
 
@@ -114,7 +113,7 @@ const OrderManagement = () => {
           <p className="text-gray-400 text-sm mt-1">Manage and track all incoming restaurant orders.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {['ALL', 'PENDING', 'PREPARING', 'COOKING', 'PACKING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].map((s) => (
+          {['ALL', 'PENDING', 'ACCEPTED', 'PREPARING', 'READY', 'SERVED', 'CANCELLED'].map((s) => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
@@ -180,11 +179,11 @@ const OrderManagement = () => {
                           <span className="text-[10px] font-black text-red-600 tracking-tighter animate-pulse leading-none">NEW</span>
                         </span>
                       )}
-                      {order.payment && (
+                      {order.payments?.[0] && (
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                          order.payment.status === 'COMPLETED' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'
+                          order.payments[0].status === 'COMPLETED' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'
                         }`}>
-                          {order.payment.status === 'COMPLETED' ? 'Paid' : 'Unpaid'}
+                          {order.payments[0].status === 'COMPLETED' ? 'Paid' : 'Unpaid'}
                         </span>
                       )}
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
@@ -194,17 +193,14 @@ const OrderManagement = () => {
                       </span>
                     </div>
                     <p className="text-sm text-gray-500 truncate">
-                      <span className="font-medium text-gray-700">{order.user?.name || 'Guest'}</span> &bull; {order.totalItems} item{order.totalItems !== 1 ? 's' : ''}
+                      {order.user?.name || 'Guest'} &bull; {order.totalItems} item{order.totalItems !== 1 ? 's' : ''}
                     </p>
-                    {order.deliveryType === 'DELIVERY' && order.address && (
-                      <p className="text-xs text-gray-400 mt-0.5 truncate">📍 {order.address.addressLine1}, {order.address.city}</p>
-                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between md:justify-end gap-4 md:gap-6 border-t md:border-t-0 pt-3 md:pt-0">
                   <div className="text-left md:text-right">
-                    <p className="text-base font-extrabold text-gray-900">{formatINR(order.totalPrice)}</p>
+                    <p className="text-base font-extrabold text-gray-900">{formatINR(order.grandTotal)}</p>
                     <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
 
@@ -215,11 +211,10 @@ const OrderManagement = () => {
                       className="px-3 py-2 border border-gray-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-red-400 bg-gray-50 font-semibold cursor-pointer transition hover:border-gray-300"
                     >
                       <option value="PENDING">Pending</option>
+                      <option value="ACCEPTED">Accepted</option>
                       <option value="PREPARING">Preparing</option>
-                      <option value="COOKING">Cooking</option>
-                      <option value="PACKING">Packing</option>
-                      <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                      <option value="DELIVERED">Delivered</option>
+                      <option value="READY">Ready to Serve</option>
+                      <option value="SERVED">Served</option>
                       <option value="CANCELLED">Cancelled</option>
                     </select>
                     <button 
@@ -280,20 +275,20 @@ const OrderManagement = () => {
                   <div className="p-4 rounded-2xl bg-green-50/30 border border-green-100/50 space-y-2">
                     <div className="flex justify-between items-center">
                       <p className="text-xs font-bold text-gray-600 uppercase tracking-tighter">Method</p>
-                      <p className="text-sm font-black text-green-700">{selectedOrderDetail.payment?.method || 'N/A'}</p>
+                      <p className="text-sm font-black text-green-700">{selectedOrderDetail.payments?.[0]?.method || 'N/A'}</p>
                     </div>
                     <div className="flex justify-between items-center">
                       <p className="text-xs font-bold text-gray-600 uppercase tracking-tighter">Status</p>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                        selectedOrderDetail.payment?.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                        selectedOrderDetail.payments?.[0]?.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
                       }`}>
-                        {selectedOrderDetail.payment?.status || 'PENDING'}
+                        {selectedOrderDetail.payments?.[0]?.status || 'PENDING'}
                       </span>
                     </div>
-                    {selectedOrderDetail.payment?.transactionId && (
+                    {selectedOrderDetail.payments?.[0]?.transactionId && (
                       <div className="pt-2 border-t border-green-100/50 mt-2">
                         <p className="text-[10px] text-gray-400 uppercase tracking-widest leading-none mb-1">TXN Identifier</p>
-                        <p className="text-[10px] font-mono font-bold text-gray-700 break-all">{selectedOrderDetail.payment.transactionId}</p>
+                        <p className="text-[10px] font-mono font-bold text-gray-700 break-all">{selectedOrderDetail.payments[0].transactionId}</p>
                       </div>
                     )}
                   </div>
@@ -337,29 +332,25 @@ const OrderManagement = () => {
                 <div className="space-y-2.5">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Subtotal</span>
-                    <span className="font-bold text-gray-600">{formatINR(selectedOrderDetail.totalPrice)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Delivery Charge</span>
-                    <span className="text-green-600 font-black uppercase text-[10px] bg-green-50 px-3 py-1 rounded-full border border-green-100">FREE</span>
+                    <span className="font-bold text-gray-600">{formatINR(selectedOrderDetail.grandTotal)}</span>
                   </div>
                   <div className="flex justify-between items-center pt-4 mt-2 border-t border-gray-50">
-                    <span className="font-black text-gray-900 text-base uppercase tracking-wider">Amount to Pay</span>
-                    <span className="text-3xl font-black text-red-500 drop-shadow-sm">{formatINR(selectedOrderDetail.totalPrice)}</span>
+                    <span className="font-black text-gray-900 text-base uppercase tracking-wider">Total Amount</span>
+                    <span className="text-3xl font-black text-red-500 drop-shadow-sm">{formatINR(selectedOrderDetail.grandTotal)}</span>
                   </div>
                 </div>
 
-                {selectedOrderDetail.address && (
+                {selectedOrderDetail.table && (
                   <div className="mt-8 p-6 rounded-[1.5rem] bg-gray-900 text-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
-                      <Truck className="h-16 w-16" />
+                      <UtensilsCrossed className="h-16 w-16" />
                     </div>
                     <p className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                       Shipping Destination
+                       Dining Location
                     </p>
-                    <p className="text-sm font-black text-white mb-1">{selectedOrderDetail.address.type}</p>
+                    <p className="text-sm font-black text-white mb-1">Table #{selectedOrderDetail.table.tableNumber}</p>
                     <p className="text-xs text-gray-300 leading-relaxed font-medium">
-                      {selectedOrderDetail.address.addressLine1}, {selectedOrderDetail.address.city}
+                      Table Capacity: {selectedOrderDetail.table.capacity} guests
                     </p>
                   </div>
                 )}

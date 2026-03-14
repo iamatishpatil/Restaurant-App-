@@ -5,7 +5,7 @@ import { authenticate, authorize } from "../middlewares/authMiddleware";
 const router = Router();
 
 router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), createTable);
-router.get('/:restaurantId', authenticate, getTables);
+router.get('/', authenticate, getTables);
 router.put('/:id/status', authenticate, authorize('ADMIN', 'MANAGER', 'WAITER', 'CHEF'), updateTableStatus);
 router.delete('/:id', authenticate, authorize('ADMIN', 'MANAGER'), deleteTable);
 

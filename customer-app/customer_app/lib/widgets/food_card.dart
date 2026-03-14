@@ -112,28 +112,44 @@ class CravyoFoodCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Veg/Non-Veg Tag
+                // Tags Overlay
                 Positioned(
                   top: 10,
                   left: 10,
-                  child: Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(6),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        )
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.circle,
-                      color: item.isVeg ? const Color(0xFF00C853) : const Color(0xFFD50000),
-                      size: 10,
-                    ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardTheme.color,
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))],
+                        ),
+                        child: Icon(Icons.circle, color: item.isVeg ? const Color(0xFF00C853) : const Color(0xFFD50000), size: 10),
+                      ),
+                      if (item.isVegan)
+                        Container(
+                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                           margin: const EdgeInsets.only(right: 6),
+                           decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.green.shade200)),
+                           child: const Text('Vegan', style: TextStyle(color: Colors.green, fontSize: 9, fontWeight: FontWeight.bold)),
+                        ),
+                      if (item.isGlutenFree)
+                        Container(
+                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                           margin: const EdgeInsets.only(right: 6),
+                           decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.orange.shade200)),
+                           child: const Text('GF', style: TextStyle(color: Colors.orange, fontSize: 9, fontWeight: FontWeight.bold)),
+                        ),
+                      if (item.isSpicy)
+                        Container(
+                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                           margin: const EdgeInsets.only(right: 6),
+                           decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.red.shade200)),
+                           child: const Text('Spicy', style: TextStyle(color: Colors.red, fontSize: 9, fontWeight: FontWeight.bold)),
+                        ),
+                    ],
                   ),
                 ),
               ],

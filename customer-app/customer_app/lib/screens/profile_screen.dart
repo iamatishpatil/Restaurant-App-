@@ -6,8 +6,8 @@ import '../providers/auth_provider.dart';
 import '../utils/constants.dart';
 import 'login_screen.dart';
 import 'orders_screen.dart';
-import 'address_screen.dart';
 import 'support_screen.dart';
+import 'reservations_screen.dart';
 import '../providers/theme_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -44,13 +44,6 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         _buildProfileCard([
-                          _buildProfileTile(context, Icons.location_on_rounded, 'Delivery Addresses', () {
-                            if (auth.isAuthenticated) {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressScreen()));
-                            } else {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
-                            }
-                          }),
                           _buildProfileTile(context, Icons.history_rounded, 'Order History', () {
                             if (auth.isAuthenticated) {
                               Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
@@ -106,7 +99,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Login to manage your orders, save addresses\nand unlock exclusive dining rewards.',
+              'Login to manage your reservations,\nand unlock exclusive dining rewards.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), height: 1.5),
             ),

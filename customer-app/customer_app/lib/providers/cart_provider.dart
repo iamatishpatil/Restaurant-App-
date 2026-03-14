@@ -4,8 +4,9 @@ import '../models/menu_item.dart';
 class CartItem {
   final MenuItem item;
   int quantity;
+  String? notes;
 
-  CartItem({required this.item, this.quantity = 1});
+  CartItem({required this.item, this.quantity = 1, this.notes});
 }
 
 class CartProvider with ChangeNotifier {
@@ -23,9 +24,16 @@ class CartProvider with ChangeNotifier {
     return total;
   }
 
+  void updateNotes(String itemId, String notes) {
+    if (_items.containsKey(itemId)) {
+      _items[itemId]!.notes = notes;
+      notifyListeners();
+    }
+  }
+
   void addItem(MenuItem item) {
     if (_items.containsKey(item.id)) {
-      _items.update(item.id, (existing) => CartItem(item: existing.item, quantity: existing.quantity + 1));
+      _items.update(item.id, (existing) => CartItem(item: existing.item, quantity: existing.quantity + 1, notes: existing.notes));
     } else {
       _items.putIfAbsent(item.id, () => CartItem(item: item));
     }
@@ -40,7 +48,7 @@ class CartProvider with ChangeNotifier {
   void removeSingleItem(String itemId) {
     if (!_items.containsKey(itemId)) return;
     if (_items[itemId]!.quantity > 1) {
-      _items.update(itemId, (existing) => CartItem(item: existing.item, quantity: existing.quantity - 1));
+      _items.update(itemId, (existing) => CartItem(item: existing.item, quantity: existing.quantity - 1, notes: existing.notes));
     } else {
       _items.remove(itemId);
     }

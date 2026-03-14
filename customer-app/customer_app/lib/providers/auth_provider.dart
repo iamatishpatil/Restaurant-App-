@@ -106,4 +106,35 @@ class AuthProvider with ChangeNotifier {
     }
     return false;
   }
+
+  Future<bool> sendOTP(String phone) async {
+    try {
+      final response = await ApiService.post('/auth/send-otp', {'phone': phone});
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Send OTP error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> verifyOTP(String phone, String code) async {
+    try {
+      final response = await ApiService.post('/auth/verify-otp', {'phone': phone, 'code': code});
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _token = data['token'];
+        _user = User.fromJson(data['user']);
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', _token!);
+        await prefs.setString('user', jsonEncode(data['user']));
+        
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      print('Verify OTP error: $e');
+    }
+    return false;
+  }
 }

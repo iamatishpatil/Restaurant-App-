@@ -5,12 +5,11 @@ import QRCode from 'qrcode';
 const prisma = new PrismaClient();
 
 export const createTable = async (req: Request, res: Response) => {
-  const { tableNumber, capacity, restaurantId } = req.body;
+  const { tableNumber, capacity } = req.body;
 
   try {
     // Generate QR code data (e.g., a URL to the customer app with table/restaurant IDs)
     const qrData = JSON.stringify({
-      restaurantId,
       tableNumber,
       action: 'ORDER'
     });
@@ -21,7 +20,6 @@ export const createTable = async (req: Request, res: Response) => {
       data: {
         tableNumber,
         capacity,
-        restaurantId,
         qrCode: qrCodeUrl,
         status: 'AVAILABLE'
       }
@@ -34,10 +32,8 @@ export const createTable = async (req: Request, res: Response) => {
 };
 
 export const getTables = async (req: Request, res: Response) => {
-  const { restaurantId } = req.params;
   try {
     const tables = await prisma.table.findMany({
-      where: { restaurantId: restaurantId as string },
       orderBy: { tableNumber: 'asc' }
     });
     res.json(tables);

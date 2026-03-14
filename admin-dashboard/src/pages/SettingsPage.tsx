@@ -124,8 +124,8 @@ const SettingsPage = () => {
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold text-gray-800">Accepting Online Orders</p>
-                <p className="text-sm text-gray-500">Toggle this off to temporarily disable the mobile app's checkout.</p>
+                <p className="font-semibold text-gray-800">Restaurant Service Status</p>
+                <p className="text-sm text-gray-500">Toggle this off to mark the restaurant as closed and disable new orders.</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input

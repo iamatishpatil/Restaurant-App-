@@ -141,6 +141,43 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Icon(Icons.notifications_none_rounded, color: Theme.of(context).colorScheme.onSurface, size: 22),
             ),
           ),
+          Consumer<TableProvider>(
+            builder: (context, table, _) {
+              if (!table.hasTable) return const SizedBox.shrink();
+              return FutureBuilder(
+                future: ApiService.get('/tables/${table.activeTableId}/bill'),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                    final response = snapshot.data as dynamic;
+                    if (response.statusCode == 200) {
+                      final data = jsonDecode(response.body);
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.receipt_long_rounded, color: AppColors.primary, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              '₹${data['totalAmount']}',
+                              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primary),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  }
+                  return const SizedBox.shrink();
+                },
+              );
+            }
+          ),
           GestureDetector(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QRScannerScreen())),
             child: Consumer<TableProvider>(

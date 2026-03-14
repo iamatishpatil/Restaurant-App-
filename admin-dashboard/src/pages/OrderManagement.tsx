@@ -20,6 +20,8 @@ const OrderManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<any>(null);
+  const [cancellingOrder, setCancellingOrder] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   useEffect(() => {
     fetchOrders();
@@ -42,10 +44,10 @@ const OrderManagement = () => {
     }
   };
 
-  const updateStatus = async (id: string, status: string) => {
+  const updateStatus = async (id: string, status: string, reason?: string) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.put(`http://localhost:5000/api/orders/${id}/status`, { status }, {
+      await axios.put(`http://localhost:5000/api/orders/${id}/status`, { status, cancelReason: reason }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchOrders();
@@ -186,11 +188,13 @@ const OrderManagement = () => {
                           {order.payments[0].status === 'COMPLETED' ? 'Paid' : 'Unpaid'}
                         </span>
                       )}
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        order.deliveryType === 'DELIVERY' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'
-                      }`}>
-                        {order.deliveryType}
-                      </span>
+                      {order.deliveryType !== 'DINE_IN' && (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                          order.deliveryType === 'DELIVERY' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'
+                        }`}>
+                          {order.deliveryType}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500 truncate">
                       {order.user?.name || 'Guest'} &bull; {order.totalItems} item{order.totalItems !== 1 ? 's' : ''}
@@ -207,7 +211,14 @@ const OrderManagement = () => {
                   <div className="flex items-center gap-3">
                     <select
                       value={order.status}
-                      onChange={(e) => updateStatus(order.id, e.target.value)}
+                      onChange={(e) => {
+                        const newStatus = e.target.value;
+                        if (newStatus === 'CANCELLED') {
+                          setCancellingOrder(order);
+                        } else {
+                          updateStatus(order.id, newStatus);
+                        }
+                      }}
                       className="px-3 py-2 border border-gray-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-red-400 bg-gray-50 font-semibold cursor-pointer transition hover:border-gray-300"
                     >
                       <option value="PENDING">Pending</option>
@@ -364,6 +375,51 @@ const OrderManagement = () => {
               >
                 Return to Orders
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancellation Modal */}
+      {cancellingOrder && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 border border-gray-100">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">Decline Order</h3>
+              <button onClick={() => setCancellingOrder(null)} className="p-2 hover:bg-gray-100 rounded-xl transition text-gray-400">
+                <XCircle className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                Please provide a reason for declining this order. This message will be shown to the customer.
+              </p>
+              <textarea
+                autoFocus
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-400 text-sm bg-gray-50 h-32 resize-none transition"
+                placeholder="e.g. Sorry, the Blue Cheese Burger is currently out of stock. Please try our Classic Veg Burger!"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+              />
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setCancellingOrder(null)}
+                  className="flex-1 py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition border border-transparent hover:border-gray-200"
+                >
+                  Go Back
+                </button>
+                <button 
+                  disabled={!cancelReason.trim()}
+                  onClick={() => {
+                    updateStatus(cancellingOrder.id, 'CANCELLED', cancelReason);
+                    setCancellingOrder(null);
+                    setCancelReason('');
+                  }}
+                  className="flex-1 py-3 bg-red-500 text-white text-sm font-bold rounded-xl hover:bg-red-600 transition shadow-lg shadow-red-100 disabled:opacity-50 disabled:shadow-none"
+                >
+                  Decline Order
+                </button>
+              </div>
             </div>
           </div>
         </div>

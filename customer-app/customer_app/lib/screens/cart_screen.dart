@@ -375,7 +375,7 @@ class _CartScreenState extends State<CartScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('PLACE ORDER', style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1, color: Colors.white)),
+                  Text('SEND TO KITCHEN', style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1, color: Colors.white)),
                   const SizedBox(width: 12),
                   const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white),
                 ],
@@ -424,14 +424,22 @@ class _CartScreenState extends State<CartScreen> {
     final cart = Provider.of<CartProvider>(context, listen: false);
     final table = Provider.of<TableProvider>(context, listen: false);
     
-    final paymentMethod = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => PaymentScreen(amount: cart.totalAmount)),
-    );
-
-    if (paymentMethod == null || paymentMethod is! String) {
+    /* 
+    if (!table.hasTable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please scan a table QR code before ordering'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
       return;
     }
+    */
+
+    // For Dine-in, we use "Pay at Restaurant" (COD) by default for Post-Paid flow
+    const paymentMethod = 'COD';
 
     final body = {
       'items': cart.items.values.map((ci) => {
@@ -453,9 +461,19 @@ class _CartScreenState extends State<CartScreen> {
         if (mounted) {
           _showSuccessDialog();
         }
+      } else {
+        final errorData = jsonDecode(response.body);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${errorData['message'] ?? 'Failed to place order'}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
-       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to place order')));
+       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Connection failed. Please check your internet.')));
     }
   }
 
@@ -473,7 +491,7 @@ class _CartScreenState extends State<CartScreen> {
             Text('Order Successful!', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w900)),
             const SizedBox(height: 12),
             Text(
-              'Your chef is already on it. Tracking your order now...',
+              'Your order has been sent to the kitchen. You can pay your total bill at the end of your meal.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(color: AppColors.textSecondary),
             ),

@@ -127,6 +127,7 @@ model Order {
   grandTotal     Decimal
 
   notes          String?
+  cancelReason   String?
   deliveryType   String           @default("DINE_IN") // DINE_IN, DELIVERY, PICKUP
   addressId      String?
   address        Address?         @relation(fields: [addressId], references: [id])

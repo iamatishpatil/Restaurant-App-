@@ -65,3 +65,55 @@ export const deleteTable = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getTableBill = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        tableId: id as string,
+        status: { notIn: ['COMPLETED', 'CANCELLED'] },
+        payments: {
+          some: { status: 'PENDING' }
+        }
+      },
+      include: {
+        orderItems: {
+          include: { menuItem: true }
+        },
+        payments: true
+      }
+    });
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: 'No active unpaid orders for this table' });
+    }
+
+    // Aggregate all items from all orders
+    const allItems: any[] = [];
+    let grandTotal = 0;
+
+    orders.forEach(order => {
+      order.orderItems.forEach(item => {
+        allItems.push({
+          id: item.id,
+          name: item.menuItem.name,
+          quantity: item.quantity,
+          price: Number(item.price),
+          total: Number(item.price) * item.quantity,
+          notes: item.notes
+        });
+        grandTotal += Number(item.price) * item.quantity;
+      });
+    });
+
+    res.json({
+      tableId: id,
+      orders: orders.map(o => o.id),
+      items: allItems,
+      totalAmount: grandTotal
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:lottie/lottie.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 import '../utils/constants.dart';
 
@@ -78,6 +79,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           child: Column(
             children: [
               _buildLottieHeader(),
+              if (currentStatus == 'CANCELLED' && _orderDetails != null && _orderDetails['cancelReason'] != null)
+                _buildCancellationReason(_orderDetails['cancelReason']),
               const SizedBox(height: 32),
               _buildOrderInfo(),
               const SizedBox(height: 48),
@@ -107,6 +110,46 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       child: Lottie.network(
         lottieUrl,
         errorBuilder: (context, error, stackTrace) => const Icon(Icons.restaurant_rounded, size: 80, color: AppColors.primary),
+      ),
+    );
+  }
+
+  Widget _buildCancellationReason(String reason) {
+    return Container(
+      margin: const EdgeInsets.only(top: AppSpacing.l),
+      padding: const EdgeInsets.all(AppSpacing.l),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(AppRadius.l),
+        border: Border.all(color: Colors.red.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.info_outline_rounded, color: Colors.red, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Order Declined by Chef',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: Colors.red,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            reason,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.red.withOpacity(0.8),
+              height: 1.5,
+            ),
+          ),
+        ],
       ),
     );
   }

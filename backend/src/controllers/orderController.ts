@@ -10,18 +10,25 @@ const orderSchema = z.object({
     menuItemId: z.string(),
     quantity: z.number().min(1),
     price: z.number(),
-    notes: z.string().optional()
+    notes: z.string().nullable().optional()
   })),
   totalPrice: z.number(),
   deliveryType: z.enum(["DELIVERY", "PICKUP", "DINE_IN"]),
-  tableId: z.string().optional(),
+  tableId: z.string().nullable().optional(),
   addressId: z.string().optional(),
   paymentMethod: z.enum(["UPI", "CARD", "COD"]).default("UPI"),
 });
 
 export const createOrder = async (req: any, res: Response) => {
   try {
-    const { items, totalPrice, deliveryType, addressId, paymentMethod } = orderSchema.parse(req.body);
+    const { items, totalPrice, deliveryType, addressId, tableId } = orderSchema.parse(req.body);
+    let { paymentMethod } = req.body;
+    
+    // For DINE_IN, always default to COD (Pay at Restaurant) for post-paid flow
+    if (deliveryType === 'DINE_IN') {
+      paymentMethod = 'COD';
+    }
+    
     const userId = req.user.id;
 
     const order = await prisma.$transaction(async (tx) => {
@@ -33,7 +40,7 @@ export const createOrder = async (req: any, res: Response) => {
           taxAmount: 0,
           grandTotal: totalPrice,
           deliveryType,
-          tableId: deliveryType === "DINE_IN" ? (req.body.tableId || null) : null,
+          tableId: (deliveryType === "DINE_IN" ? tableId : null) || null,
           addressId: deliveryType === "DELIVERY" ? addressId : null,
           status: "NEW_ORDER",
           orderItems: {
@@ -114,12 +121,12 @@ export const getOrderById = async (req: Request, res: Response) => {
 export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const { status } = req.body;
+    const { status, cancelReason } = req.body;
     const userRole = (req as any).user?.role;
 
     // RBAC: Enforce valid status transitions by role
-    if (userRole === "CHEF" && !["PREPARING", "READY"].includes(status)) {
-      return res.status(403).json({ message: "Chefs can only update status to PREPARING or READY" });
+    if (userRole === "CHEF" && !["PREPARING", "READY", "CANCELLED"].includes(status)) {
+      return res.status(403).json({ message: "Chefs can only update status to PREPARING, READY, or CANCELLED" });
     }
     if (userRole === "WAITER" && !["SERVED", "COMPLETED"].includes(status)) {
       return res.status(403).json({ message: "Waiters can only update status to SERVED or COMPLETED" });
@@ -127,6 +134,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     
     // Logic: If status is COMPLETED, also ensure payment status is UPDATED if it's COD
     const orderData: any = { status };
+    if (cancelReason) {
+      orderData.cancelReason = cancelReason;
+    }
+    
     if (status === "COMPLETED") {
        // Auto-update linked payment to COMPLETED
        await prisma.order.findUnique({
@@ -186,7 +197,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     }
 
     if (order.userId) {
-      await sendNotification(order.userId, "Order Update", `Your order is now ${status}`);
+      const msg = status === "CANCELLED" 
+        ? `Your order was cancelled. Reason: ${cancelReason || 'Out of stock'}`
+        : `Your order is now ${status}`;
+      await sendNotification(order.userId, "Order Update", msg);
     }
 
     res.json(order);

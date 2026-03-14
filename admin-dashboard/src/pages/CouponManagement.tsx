@@ -141,7 +141,7 @@ const CouponManagement = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 font-bold text-gray-800">{coupon.discount || coupon.discountPercent}% OFF</td>
-                  <td className="px-6 py-4 font-medium">${coupon.minOrderAmount}</td>
+                  <td className="px-6 py-4 font-medium">₹{coupon.minOrderAmount}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <Calendar className="h-4 w-4" /> {new Date(coupon.expiryDate).toLocaleDateString()}
@@ -189,7 +189,7 @@ const CouponManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Min. Order ($)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Min. Order (₹)</label>
                   <input 
                     type="number"
                     className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-primary"

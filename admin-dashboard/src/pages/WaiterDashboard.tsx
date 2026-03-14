@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 import { 
   Bell, 
   CheckCircle2, 
@@ -10,6 +11,7 @@ import {
   Receipt,
   ShoppingCart,
   PlusCircle,
+  QrCode,
   X as CloseIcon
 } from 'lucide-react';
 import { formatINR } from '../utils/formatCurrency';
@@ -26,6 +28,8 @@ const WaiterDashboard = () => {
     tableId: '',
     items: [] as any[]
   });
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [tableBill, setTableBill] = useState<any>(null);
 
   const fetchInitialData = useCallback(async () => {
     try {
@@ -113,6 +117,72 @@ const WaiterDashboard = () => {
     };
   }, [fetchInitialData]);
 
+  // QR Scanner Logic
+  useEffect(() => {
+    if (isScannerOpen) {
+      const scanner = new Html5QrcodeScanner(
+        "reader",
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        /* verbose= */ false
+      );
+
+      scanner.render((decodedText) => {
+        try {
+          const data = JSON.parse(decodedText);
+          if (data.tableNumber) {
+            handleScanSuccess(data.tableNumber);
+            scanner.clear();
+            setIsScannerOpen(false);
+          }
+        } catch (e) {
+          console.error("Invalid QR Code", e);
+        }
+      }, (error) => {
+        // Suppress scanning errors
+      });
+
+      return () => {
+        scanner.clear().catch(e => console.error(e));
+      };
+    }
+  }, [isScannerOpen]);
+
+  const handleScanSuccess = async (tableNumber: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      
+      // 1. Find the table ID by Number
+      const table = tables.find(t => t.tableNumber === tableNumber);
+      if (!table) throw new Error("Table not found");
+
+      // 2. Fetch Aggregated Bill
+      const res = await axios.get(`http://localhost:5000/api/tables/${table.id}/bill`, config);
+      setTableBill(res.data);
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || "Failed to fetch table bill");
+    }
+  };
+
+  const settleTable = async () => {
+    if (!tableBill) return;
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      
+      // Mark all orders as COMPLETED (and auto-paid in backend logic)
+      await Promise.all(tableBill.orders.map((orderId: string) => 
+        axios.put(`http://localhost:5000/api/orders/${orderId}/status`, { status: 'COMPLETED' }, config)
+      ));
+
+      setTableBill(null);
+      fetchInitialData();
+      alert(`Table ${tables.find(t => t.id === tableBill.tableId)?.tableNumber} settled successfully!`);
+    } catch (err) {
+      console.error("Settlement failed", err);
+    }
+  };
+
   const handleCreateManualOrder = async () => {
     if (!newOrder.tableId || newOrder.items.length === 0) return;
     try {
@@ -158,6 +228,13 @@ const WaiterDashboard = () => {
           >
             <PlusCircle className="h-5 w-5" />
             <span className="text-[10px] font-bold uppercase">New Order</span>
+          </button>
+          <button 
+            onClick={() => setIsScannerOpen(true)}
+            className="bg-red-500 text-white p-3 rounded-2xl flex items-center gap-2 shadow-lg shadow-red-200"
+          >
+            <QrCode className="h-5 w-5" />
+            <span className="text-[10px] font-bold uppercase">Scan Table</span>
           </button>
           <div className="relative bg-red-50 p-3 rounded-2xl">
             <Bell className="h-6 w-6 text-red-500" />
@@ -322,6 +399,65 @@ const WaiterDashboard = () => {
             >
               <ShoppingCart className="h-5 w-5" /> Create Order
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* QR Scanner Modal */}
+      {isScannerOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-6">
+          <div className="bg-white rounded-[3rem] w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-8 pb-4 flex justify-between items-center">
+               <h2 className="text-2xl font-black tracking-tight">Scan Table QR</h2>
+               <button onClick={() => setIsScannerOpen(false)} className="p-2 bg-gray-100 rounded-full">
+                 <CloseIcon className="h-5 w-5" />
+               </button>
+            </div>
+            <div className="p-8 pt-0">
+               <div id="reader" className="rounded-3xl overflow-hidden border-4 border-gray-50"></div>
+               <p className="text-center text-xs text-gray-400 mt-6 font-bold uppercase tracking-widest">Point camera at the table QR code</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Final Billing Modal */}
+      {tableBill && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[70] flex items-end md:items-center justify-center p-0 md:p-6">
+          <div className="bg-white w-full max-w-lg rounded-t-[3rem] md:rounded-[3rem] p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-300">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Final Bill</h2>
+                <p className="text-[10px] font-black text-red-500 uppercase tracking-widest">Table #{tables.find(t => t.id === tableBill.tableId)?.tableNumber}</p>
+              </div>
+              <button onClick={() => setTableBill(null)} className="bg-gray-100 p-2 rounded-full"><CloseIcon /></button>
+            </div>
+
+            <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+              {tableBill.items.map((item: any, idx: number) => (
+                <div key={idx} className="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                   <div>
+                      <p className="font-bold text-gray-800 text-sm">{item.name}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">{item.quantity} units &bull; {formatINR(item.price)}</p>
+                   </div>
+                   <p className="font-black text-gray-900">{formatINR(item.total)}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-dashed border-gray-200">
+               <div className="flex justify-between items-center mb-8">
+                  <span className="text-sm font-black text-gray-400 uppercase tracking-widest leading-none">Total Amount</span>
+                  <span className="text-4xl font-black text-gray-900 tracking-tighter">{formatINR(tableBill.totalAmount)}</span>
+               </div>
+
+               <button 
+                 onClick={settleTable}
+                 className="w-full py-5 bg-green-500 text-white font-black rounded-2xl shadow-xl shadow-green-500/20 active:scale-95 transition-all outline-none"
+               >
+                 Mark Paid & Close Table
+               </button>
+            </div>
           </div>
         </div>
       )}

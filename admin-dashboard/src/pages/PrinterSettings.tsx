@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { 
   Printer, 
   Plus, 
@@ -23,9 +23,7 @@ const PrinterSettings = () => {
 
   const fetchPrinters = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/admin/printers', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await api.get('/admin/printers');
       setPrinters(res.data);
     } catch (err) {
       console.error('Failed to fetch printers:', err);
@@ -41,9 +39,7 @@ const PrinterSettings = () => {
   const handleAddPrinter = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/admin/printers', newPrinter, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      await api.post('/admin/printers', newPrinter);
       setShowAddModal(false);
       setNewPrinter({ name: '', type: 'LAN', connection: '', usage: 'KITCHEN' });
       fetchPrinters();
@@ -55,9 +51,7 @@ const PrinterSettings = () => {
   const deletePrinter = async (id: string) => {
     if (!window.confirm('Delete this printer configuration?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/admin/printers/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      await api.delete(`/admin/printers/${id}`);
       fetchPrinters();
     } catch (err) {
       console.error('Failed to delete printer:', err);

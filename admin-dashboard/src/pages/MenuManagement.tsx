@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Plus, Edit, Trash2, X, Search } from 'lucide-react';
 import { getImageUrl } from '../utils/imageUtils';
 import { formatINR } from '../utils/formatCurrency';
@@ -39,12 +39,10 @@ const MenuManagement = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
       const [itemsRes, catRes, invRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/admin/menu', config),
-        axios.get('http://localhost:5000/api/admin/categories', config),
-        axios.get('http://localhost:5000/api/admin/inventory', config)
+        api.get('/admin/menu'),
+        api.get('/admin/categories'),
+        api.get('/admin/inventory')
       ]);
       setItems(itemsRes.data);
       setCategories(catRes.data);
@@ -58,23 +56,20 @@ const MenuManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
-    const config = { headers: { Authorization: `Bearer ${token}` } };
     setIsLoading(true);
-
     try {
       if (editingItem) {
         if (user?.role === 'CHEF') {
           // Chef can only update preparationTime and availability
-          await axios.patch(`http://localhost:5000/api/admin/menu/${editingId || editingItem.id}/status`, {
+          await api.patch(`/admin/menu/${editingId || editingItem.id}/status`, {
             preparationTime: formData.preparationTime,
             availability: formData.availability
-          }, config);
+          });
         } else {
-          await axios.put(`http://localhost:5000/api/admin/menu/${editingId || editingItem.id}`, formData, config);
+          await api.put(`/admin/menu/${editingId || editingItem.id}`, formData);
         }
       } else {
-        await axios.post('http://localhost:5000/api/admin/menu', formData, config);
+        await api.post('/admin/menu', formData);
       }
       fetchData();
       setIsModalOpen(false);
@@ -91,10 +86,8 @@ const MenuManagement = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
-    const token = localStorage.getItem('token');
-    const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
-      await axios.delete(`http://localhost:5000/api/admin/menu/${id}`, config);
+      await api.delete(`/admin/menu/${id}`);
       fetchData();
     } catch (err) {
       console.error(err);
@@ -266,13 +259,11 @@ const MenuManagement = () => {
                           if (!file) return;
                           const fmData = new FormData();
                           fmData.append('image', file);
-                          const token = localStorage.getItem('token');
                           try {
                             setIsLoading(true);
-                            const res = await axios.post('http://localhost:5000/api/upload', fmData, {
+                            const res = await api.post('/upload', fmData, {
                               headers: { 
-                                'Content-Type': 'multipart/form-data',
-                                Authorization: `Bearer ${token}` 
+                                'Content-Type': 'multipart/form-data'
                               }
                             });
                             setFormData({...formData, image: res.data.imageUrl});

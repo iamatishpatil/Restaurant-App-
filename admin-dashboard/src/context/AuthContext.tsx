@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 interface AuthContextType {
   user: any;
@@ -20,9 +20,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchUser = async () => {
       if (token) {
         try {
-          const res = await axios.get('http://localhost:5000/api/auth/me', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          const res = await api.get('/auth/me');
           setUser(res.data);
         } catch (err) {
           console.error('Failed to fetch user', err);

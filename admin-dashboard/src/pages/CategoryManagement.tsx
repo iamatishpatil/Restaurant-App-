@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Plus, Trash2, Edit2, Image as ImageIcon, X, ArrowRight, Eye, ClipboardList } from 'lucide-react';
 import { getImageUrl, onImageError } from '../utils/imageUtils';
 import { Link } from 'react-router-dom';
@@ -24,7 +24,7 @@ const CategoryManagement = () => {
   const fetchCategories = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/admin/categories');
+      const res = await api.get('/admin/categories');
       setCategories(res.data);
     } catch (err) {
       console.error(err);
@@ -38,10 +38,7 @@ const CategoryManagement = () => {
     setIsDrawerOpen(true);
     setIsLoadingItems(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:5000/api/admin/menu?categoryId=${cat.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get(`/admin/menu?categoryId=${cat.id}`);
       setCategoryItems(res.data);
     } catch (err) {
       console.error('Failed to fetch category items', err);
@@ -52,17 +49,12 @@ const CategoryManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     setIsLoading(true);
     try {
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/admin/categories/${editingId}`, newCategory, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.put(`/admin/categories/${editingId}`, newCategory);
       } else {
-        await axios.post('http://localhost:5000/api/admin/categories', newCategory, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.post('/admin/categories', newCategory);
       }
       setIsModalOpen(false);
       setNewCategory({ name: '', image: '', description: '' });
@@ -78,11 +70,8 @@ const CategoryManagement = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this category?")) return;
-    const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:5000/api/admin/categories/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/admin/categories/${id}`);
       fetchCategories();
     } catch (err: any) {
       console.error(err);
@@ -197,12 +186,10 @@ const CategoryManagement = () => {
                         if (!file) return;
                         const formData = new FormData();
                         formData.append('image', file);
-                        const token = localStorage.getItem('token');
                         try {
-                          const res = await axios.post('http://localhost:5000/api/upload', formData, {
+                          const res = await api.post('/upload', formData, {
                             headers: { 
-                              'Content-Type': 'multipart/form-data',
-                              Authorization: `Bearer ${token}` 
+                              'Content-Type': 'multipart/form-data'
                             }
                           });
                           setNewCategory({...newCategory, image: res.data.imageUrl});

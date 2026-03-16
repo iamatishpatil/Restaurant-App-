@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { 
   Plus, 
   Trash2, 
@@ -28,10 +28,7 @@ const TableManagement = () => {
 
   const fetchReservations = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/reservations', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/reservations');
       setReservations(res.data);
     } catch (err) {
       console.error('Failed to fetch reservations', err);
@@ -41,7 +38,7 @@ const TableManagement = () => {
   const fetchTables = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/tables`);
+      const res = await api.get('/tables');
       setTables(res.data);
     } catch (err) {
       console.error(err);
@@ -53,7 +50,7 @@ const TableManagement = () => {
   const handleAddTable = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/tables', newTable);
+      await api.post('/tables', newTable);
       setShowAddModal(false);
       setNewTable({ tableNumber: '', capacity: 4 });
       fetchTables();
@@ -65,7 +62,7 @@ const TableManagement = () => {
   const handleDeleteTable = async (id: string) => {
     if (!window.confirm('Delete this table and its QR code?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/tables/${id}`);
+      await api.delete(`/tables/${id}`);
       fetchTables();
     } catch (err) {
       console.error(err);

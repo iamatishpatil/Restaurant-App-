@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Plus, User, Shield, Mail, Trash2 } from 'lucide-react';
 
 const StaffManagement = () => {
@@ -16,13 +16,10 @@ const StaffManagement = () => {
   const fetchStaff = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/admin/staff', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setStaff(res.data);
-    } catch (err) {
-      console.error(err);
+      const res = await api.get('/admin/staff');
+      setStaff(res.data.staff || []);
+    } catch (error) {
+      console.error('Error fetching staff:', error);
     } finally {
       setIsLoading(false);
     }
@@ -30,12 +27,9 @@ const StaffManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     setIsLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/admin/staff', newStaff, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post('/admin/staff', newStaff);
       setIsModalOpen(false);
       setNewStaff({ name: '', email: '', password: '', role: 'CHEF' });
       fetchStaff();
@@ -49,11 +43,8 @@ const StaffManagement = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this staff member?")) return;
-    const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:5000/api/admin/staff/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/admin/staff/${id}`);
       fetchStaff();
     } catch (err) {
       console.error(err);

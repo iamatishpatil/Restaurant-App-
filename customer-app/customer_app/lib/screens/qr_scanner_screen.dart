@@ -34,13 +34,8 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
           // For now, let's parse the JSON.
           
           final Map<String, dynamic> data = jsonDecode(barcode.rawValue!);
-          if (data.containsKey('tableNumber')) {
-             // In a real app, we would verify this with the backend.
-             // For now, we'll store it as is.
-             // We'll need the ID for the backend order. 
-             // If ID isn't in QR, we can fetch it. Let's assume it's there for this implementation.
-             
-             final String tableId = data['id'] ?? 'TEMP_ID_${data['tableNumber']}';
+          if (data.containsKey('tableNumber') && data.containsKey('id')) {
+             final String tableId = data['id'];
              final String tableNumber = data['tableNumber'].toString();
              
              await Provider.of<TableProvider>(context, listen: false).setTable(tableId, tableNumber);

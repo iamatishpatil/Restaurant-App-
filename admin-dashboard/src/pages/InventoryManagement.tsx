@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { AlertTriangle, Edit3, Plus, Trash2 } from 'lucide-react';
 
 const InventoryManagement = () => {
@@ -16,10 +16,7 @@ const InventoryManagement = () => {
   const fetchInventory = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/admin/inventory', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/admin/inventory');
       setInventory(res.data);
     } catch (err) {
       console.error(err);
@@ -30,13 +27,10 @@ const InventoryManagement = () => {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     setIsLoading(true);
     try {
-      await axios.put(`http://localhost:5000/api/admin/inventory/${editingItem.id}`, {
+      await api.put(`/admin/inventory/${editingItem.id}`, {
         quantity: parseFloat(editingItem.quantity)
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setIsModalOpen(false);
       setEditingItem(null);
@@ -51,14 +45,11 @@ const InventoryManagement = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     setIsLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/admin/inventory', {
+      await api.post('/admin/inventory', {
         ...newItem,
         quantity: parseFloat(newItem.quantity)
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setIsModalOpen(false);
       setNewItem({ itemName: '', quantity: '', unit: '' });
@@ -73,11 +64,8 @@ const InventoryManagement = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Delete this inventory item?")) return;
-    const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:5000/api/admin/inventory/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/admin/inventory/${id}`);
       fetchInventory();
     } catch (err) {
       console.error(err);

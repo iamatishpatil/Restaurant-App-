@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Plus, Trash2, Tag, Calendar, Edit } from 'lucide-react';
 
 const CouponManagement = () => {
@@ -17,10 +17,7 @@ const CouponManagement = () => {
   const fetchCoupons = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/admin/coupons', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/admin/coupons');
       setCoupons(res.data);
     } catch (err) {
       console.error(err);
@@ -31,7 +28,6 @@ const CouponManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     setIsLoading(true);
     try {
       const payload = {
@@ -42,13 +38,9 @@ const CouponManagement = () => {
       };
 
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/admin/coupons/${editingId}`, payload, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.put(`/admin/coupons/${editingId}`, payload);
       } else {
-        await axios.post('http://localhost:5000/api/admin/coupons', payload, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.post('/admin/coupons', payload);
       }
       setIsModalOpen(false);
       setNewCoupon({ code: '', discountPercent: '', minOrderAmount: '', expiryDate: '' });
@@ -64,11 +56,8 @@ const CouponManagement = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this coupon?")) return;
-    const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:5000/api/admin/coupons/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/admin/coupons/${id}`);
       fetchCoupons();
     } catch (err) {
       console.error(err);

@@ -1,38 +1,37 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Brand Colors
-  static const Color primary = Color(0xFFFF4F5A); // Vibrant food delivery red
-  static const Color primaryDark = Color(0xE63E4A);
-  static const Color accent = Color(0xFFFF8A65); // Soft orange highlight
+  // Signature Premium Palette
+  static const Color primary = Color(0xFFE31E24); // Signature Crimson
+  static const Color primaryLight = Color(0xFFFF5252);
+  static const Color slateMidnight = Color(0xFF0F172A); // Deep Slate
+  static const Color slateAccent = Color(0xFF334155);
   
-  // Neutral Colors
-  static const Color background = Color(0xFFFFFFFF);
-  static const Color surface = Color(0xFFF8F8F8);
-  static const Color surfaceLight = Color(0xFFF3F4F6);
-  static const Color divider = Color(0xFFEAEAEA);
+  // Luxury Neutral Colors
+  static const Color background = Color(0xFFFAFAFA);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceLight = Color(0xFFF1F5F9);
+  static const Color divider = Color(0xFFE2E8F0);
   static const Color white = Colors.white;
 
-  // Text Colors
-  static const Color text = Color(0xFF1C1C1C);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textPlaceholder = Color(0xFF9CA3AF);
-  static const Color textDisabled = Color(0xFFC4C4C4);
+  // Text Selection
+  static const Color text = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textPlaceholder = Color(0xFF94A3B8);
   
-  // Surface Colors for Premium Layering
-  static const Color surface1 = Color(0xFFF9FAFB);
-  static const Color surface2 = Color(0xFFF3F4F6);
-  static const Color surface3 = Color(0xFFE5E7EB);
+  // Glassmorphism Tokens
+  static const Color glassWhite = Color(0xB3FFFFFF);
+  static const Color glassBorder = Color(0x33FFFFFF);
   
   // Gradients for high-end feel
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFFFF4F5A), Color(0xFFFF7E87)],
+    colors: [Color(0xFFE31E24), Color(0xFFFF5252)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient surfaceGradient = LinearGradient(
-    colors: [Colors.white, Color(0xFFF9FAFB)],
+  static const LinearGradient slateGradient = LinearGradient(
+    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
@@ -43,8 +42,14 @@ class AppColors {
   static const Color warning = Color(0xFFF59E0B);
   static const Color ratingGreen = Color(0xFF22C55E);
   
-  static const Color shimmerBase = Color(0xFFE5E7EB);
-  static const Color shimmerHighlight = Color(0xFFF3F4F6);
+  static const Color shimmerBase = Color(0xFFF1F5F9);
+  static const Color shimmerHighlight = Color(0xFFF8FAFC);
+
+  // Backward Compatibility Aliases
+  static const Color accent = primaryLight;
+  static const Color surface1 = surface;
+  static const Color surface2 = surfaceLight;
+  static const Color surface3 = divider;
 }
 
 class DarkColors {

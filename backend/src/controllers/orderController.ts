@@ -239,3 +239,67 @@ export const getAllOrders = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+export const getRecommendations = async (req: any, res: Response) => {
+  try {
+    const userId = req.user.id;
+
+    // 1. Get Top ordered items (Buy Again)
+    const userOrders = await prisma.order.findMany({
+      where: { userId },
+      include: { orderItems: { select: { menuItemId: true } } },
+      take: 20,
+      orderBy: { createdAt: "desc" }
+    });
+
+    const orderedItemIds = Array.from(new Set(userOrders.flatMap(o => o.orderItems.map(oi => oi.menuItemId))));
+    
+    const buyAgainItems = await prisma.menuItem.findMany({
+      where: { id: { in: orderedItemIds }, availability: true },
+      take: 6
+    });
+
+    // 2. Suggestions based on categories Ordered
+    const topCategories = await prisma.menuItem.findMany({
+      where: { id: { in: orderedItemIds } },
+      select: { categoryId: true }
+    }).then(items => Array.from(new Set(items.map(i => i.categoryId))));
+
+    const suggestions = await prisma.menuItem.findMany({
+      where: { 
+        categoryId: { in: topCategories }, 
+        id: { notIn: orderedItemIds },
+        availability: true 
+      },
+      take: 6
+    });
+
+    res.json({ buyAgain: buyAgainItems, suggestions });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getEstimatedWaitTime = async (req: Request, res: Response) => {
+  try {
+    // Logic: Active Orders x Average Prep Time / Efficiency Constant
+    const activeOrders = await prisma.order.findMany({
+      where: { status: { in: ['NEW_ORDER', 'ACCEPTED', 'PREPARING'] } },
+      include: { orderItems: { include: { menuItem: { select: { preparationTime: true } } } } }
+    });
+
+    let totalMinutes = 0;
+    activeOrders.forEach(order => {
+      order.orderItems.forEach(item => {
+        // Use set prep time or default to 12 mins
+        totalMinutes += (item.menuItem.preparationTime || 12) * item.quantity;
+      });
+    });
+
+    // Assume 3 cooking stations (Efficiency = 3)
+    const estimatedWait = Math.ceil(totalMinutes / 3) + 5; // +5 for overhead
+
+    res.json({ estimatedWait: Math.max(10, estimatedWait) });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

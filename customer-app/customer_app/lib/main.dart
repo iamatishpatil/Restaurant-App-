@@ -101,38 +101,39 @@ class _MainScreenState extends State<MainScreen> {
         final isVeg = mode.isVegMode;
         return GestureDetector(
           onTap: () => mode.toggleMode(),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: isVeg ? const Color(0xFF2D4B1F) : const Color(0xFFC62828), // Dark forest green or deep red
-              borderRadius: BorderRadius.circular(35),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(35),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: isVeg ? const Color(0xFF2D4B1F).withOpacity(0.8) : AppColors.primary.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(35),
+                  border: Border.all(color: Colors.white.withOpacity(0.2)),
                 ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isVeg ? Icons.volunteer_activism_rounded : Icons.flash_on_rounded, // Heart sparkle feel or non-veg icon
-                  color: Colors.white,
-                  size: 20,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isVeg ? Icons.spa_rounded : Icons.kebab_dining_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isVeg ? 'VEG' : 'NON-VEG',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  isVeg ? 'Non-Veg' : 'Veg',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -141,28 +142,34 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildBottomBar(NavigationProvider nav) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(40),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(40),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color!.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(40),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.06)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _navItem(0, Icons.home_outlined, Icons.home_rounded, 'Home', nav),
-          _navItem(1, Icons.event_seat_outlined, Icons.event_seat_rounded, 'Book', nav),
-          _navItem(2, Icons.shopping_cart_outlined, Icons.shopping_cart_rounded, 'Cart', nav),
-          _navItem(3, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders', nav),
-        ],
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _navItem(0, Icons.grid_view_outlined, Icons.grid_view_rounded, 'Home', nav),
+              _navItem(1, Icons.calendar_today_outlined, Icons.calendar_today_rounded, 'Book', nav),
+              _navItem(2, Icons.shopping_bag_outlined, Icons.shopping_bag_rounded, 'Cart', nav),
+              _navItem(3, Icons.person_outline_rounded, Icons.person_rounded, 'Orders', nav),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -172,18 +179,17 @@ class _MainScreenState extends State<MainScreen> {
     
     Widget iconWidget = Icon(
       isSelected ? activeIcon : icon,
-      color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-      size: 22,
+      color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+      size: 24,
     );
 
-    // Apply badge conditionally on Cart (index 2 now)
     if (index == 2) {
       iconWidget = Consumer<CartProvider>(
         builder: (context, cart, child) {
           if (cart.items.isEmpty) return child!;
           return Badge(
             backgroundColor: AppColors.primary,
-            smallSize: 8,
+            label: Text(cart.items.length.toString(), style: const TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold)),
             child: child,
           );
         },
@@ -195,24 +201,29 @@ class _MainScreenState extends State<MainScreen> {
       onTap: () => nav.setIndex(index),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.fastOutSlowIn,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             iconWidget,
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                fontSize: 10,
+            const SizedBox(height: 4),
+            AnimatedOpacity(
+              opacity: isSelected ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: Text(
+                label,
+                style: GoogleFonts.poppins(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 9,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ],

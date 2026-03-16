@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Plus, Trash2, Image as ImageIcon, Link as LinkIcon, Edit2 } from 'lucide-react';
 import { getImageUrl, onImageError } from '../utils/imageUtils';
 
@@ -18,10 +18,7 @@ const BannerManagement = () => {
   const fetchBanners = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/admin/banners', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/admin/banners');
       setBanners(res.data);
     } catch (err) {
       console.error(err);
@@ -32,17 +29,12 @@ const BannerManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     setIsLoading(true);
     try {
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/admin/banners/${editingId}`, newBanner, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.put(`/admin/banners/${editingId}`, newBanner);
       } else {
-        await axios.post('http://localhost:5000/api/admin/banners', newBanner, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.post('/admin/banners', newBanner);
       }
       setIsModalOpen(false);
       setNewBanner({ title: '', image: '', link: '' });
@@ -58,11 +50,8 @@ const BannerManagement = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this banner?")) return;
-    const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:5000/api/admin/banners/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/admin/banners/${id}`);
       fetchBanners();
     } catch (err) {
       console.error(err);
@@ -163,12 +152,10 @@ const BannerManagement = () => {
                         if (!file) return;
                         const formData = new FormData();
                         formData.append('image', file);
-                        const token = localStorage.getItem('token');
                         try {
-                          const res = await axios.post('http://localhost:5000/api/upload', formData, {
+                          const res = await api.post('/upload', formData, {
                             headers: {
-                              'Content-Type': 'multipart/form-data',
-                              Authorization: `Bearer ${token}`
+                              'Content-Type': 'multipart/form-data'
                             }
                           });
                           setNewBanner({ ...newBanner, image: res.data.imageUrl });

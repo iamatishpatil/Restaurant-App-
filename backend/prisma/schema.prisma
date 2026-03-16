@@ -253,6 +253,8 @@ model Settings {
   pushNotifications Boolean  @default(true)
   logo              String?  
   
+  reservationDeposit Decimal  @default(0.0)
+  
   updatedAt         DateTime @updatedAt
 }
 
@@ -285,9 +287,14 @@ model Reservation {
   date           DateTime 
   time           String   // e.g., "19:00"
   partySize      Int
-  status         String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  status         String   @default("PENDING") // PENDING, AWAITING_PAYMENT, CONFIRMED, CANCELLED, COMPLETED
   specialRequest String?
   rejectionReason String?
+  
+  depositAmount  Decimal  @default(0.0)
+  depositPaid    Boolean  @default(false)
+  paymentId      String?
+  
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

@@ -1,6 +1,7 @@
 // Dine-in optimized Order Management
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
+import { getImageUrl } from '../utils/imageUtils';
 import {
   Eye,
   Clock,
@@ -30,12 +31,9 @@ const OrderManagement = () => {
   }, []);
 
   const fetchOrders = async () => {
-    const token = localStorage.getItem('token');
     setIsLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/orders', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/orders');
       setOrders(res.data);
     } catch (err) {
       console.error(err);
@@ -45,11 +43,8 @@ const OrderManagement = () => {
   };
 
   const updateStatus = async (id: string, status: string, reason?: string) => {
-    const token = localStorage.getItem('token');
     try {
-      await axios.put(`http://localhost:5000/api/orders/${id}/status`, { status, cancelReason: reason }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/orders/${id}/status`, { status, cancelReason: reason });
       fetchOrders();
     } catch (err) {
       console.error(err);
@@ -68,15 +63,6 @@ const OrderManagement = () => {
     }
   };
 
-  const statusPriority: Record<string, number> = {
-    PENDING: 1,
-    PREPARING: 2,
-    COOKING: 2,
-    READY: 2,
-    SERVED: 3,
-    COMPLETED: 3,
-    CANCELLED: 3,
-  };
 
   const filteredOrders = orders
     .filter((o: any) => {
@@ -85,17 +71,7 @@ const OrderManagement = () => {
         o.user?.name.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesStatus && matchesSearch;
     })
-    .sort((a: any, b: any) => {
-      const priorityA = statusPriority[a.status] || 99;
-      const priorityB = statusPriority[b.status] || 99;
-
-      if (priorityA !== priorityB) {
-        return priorityA - priorityB;
-      }
-
-      // Secondary sort: newest first
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const statusConfig: Record<string, { label: string; bg: string; text: string }> = {
     PENDING:          { label: 'Pending',          bg: 'bg-yellow-50',  text: 'text-yellow-700' },
@@ -317,7 +293,7 @@ const OrderManagement = () => {
                         <div className="h-14 w-14 rounded-2xl bg-white border border-gray-100 overflow-hidden shadow-inner flex-shrink-0">
                           {item.menuItem?.image ? (
                             <img 
-                              src={`http://localhost:5000${item.menuItem.image}`} 
+                              src={getImageUrl(item.menuItem.image)} 
                               alt={item.menuItem.name}
                               className="w-full h-full object-cover"
                               onError={(e: any) => e.target.src = 'https://placehold.co/100x100?text=Food'}

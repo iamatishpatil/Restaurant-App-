@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Save, Bell, Shield } from 'lucide-react';
 
 const SettingsPage = () => {
@@ -20,10 +20,7 @@ const SettingsPage = () => {
 
   const fetchSettings = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/admin/settings', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/admin/settings');
       setSettings(res.data);
     } catch (err) {
       console.error(err);
@@ -36,10 +33,7 @@ const SettingsPage = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.put('http://localhost:5000/api/admin/settings', settings, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put('/admin/settings', settings);
       alert('Settings updated successfully!');
     } catch (err) {
       console.error(err);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Calendar, Clock, Users, XCircle } from 'lucide-react';
 
 const ReservationManagement = () => {
@@ -16,12 +16,9 @@ const ReservationManagement = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      
       const [resData, tablesData] = await Promise.all([
-        axios.get('http://localhost:5000/api/reservations', config),
-        axios.get('http://localhost:5000/api/tables', config)
+        api.get('/reservations'),
+        api.get('/tables')
       ]);
       
       setReservations(resData.data);
@@ -35,12 +32,11 @@ const ReservationManagement = () => {
 
   const updateStatus = async (id: string, status: string, tableId?: string, reason?: string) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/reservations/${id}/status`, {
+      await api.put(`/reservations/${id}/status`, {
         status,
         tableId,
         rejectionReason: reason
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       
       setShowRejectModal(null);
       setRejectReason('');

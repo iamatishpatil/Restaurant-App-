@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Star, MessageSquare, Trash2 } from 'lucide-react';
 
 const ReviewModeration = () => {
@@ -13,10 +13,7 @@ const ReviewModeration = () => {
   const fetchReviews = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/admin/reviews', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/admin/reviews');
       setReviews(res.data);
     } catch (err) {
       console.error(err);
@@ -27,11 +24,8 @@ const ReviewModeration = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this review?")) return;
-    const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:5000/api/admin/reviews/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/admin/reviews/${id}`);
       fetchReviews();
     } catch (err) {
       console.error(err);

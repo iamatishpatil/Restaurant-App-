@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -28,33 +29,32 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
         physics: const BouncingScrollPhysics(),
         slivers: [
           SliverAppBar(
-            expandedHeight: 380,
+            expandedHeight: 420,
             pinned: true,
             stretch: true,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            elevation: 0,
             leading: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               child: GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(15),
                   child: BackdropFilter(
-                    filter: ColorFilter.mode(Colors.black.withOpacity(0.1), BlendMode.overlay),
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                        color: Colors.black.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withOpacity(0.2)),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.white, size: 16),
+                      child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
                     ),
                   ),
                 ),
               ),
             ),
             flexibleSpace: FlexibleSpaceBar(
-              stretchModes: const [StretchMode.zoomBackground],
+              stretchModes: const [StretchMode.zoomBackground, StretchMode.blurBackground],
               background: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -65,7 +65,6 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                       fit: BoxFit.cover,
                     ),
                   ),
-                  // Sophisticated Gradient for text readability
                   Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
@@ -73,14 +72,48 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.black.withOpacity(0.4),
+                            Colors.black.withOpacity(0.3),
                             Colors.transparent,
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.6),
+                            Colors.black.withOpacity(0.7),
                           ],
-                          stops: const [0.0, 0.2, 0.7, 1.0],
+                          stops: const [0.0, 0.4, 1.0],
                         ),
                       ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 30,
+                    left: 20,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'CHEFS SPECIAL',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.item.name,
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -1,
+                          ),
+                        ).animate().fadeIn(delay: 200.ms, duration: 600.ms).slideX(begin: -0.1, end: 0),
+                      ],
                     ),
                   ),
                 ],
@@ -89,128 +122,80 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
           ),
           SliverToBoxAdapter(
             child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.modal)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.normal, vertical: AppSpacing.normal),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Veg/Non-Veg + Category
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: widget.item.isVeg ? const Color(0xFF00C853) : const Color(0xFFD50000), width: 1.5),
-                          ),
-                          child: Icon(
-                            Icons.circle,
-                            color: widget.item.isVeg ? const Color(0xFF00C853) : const Color(0xFFD50000),
-                            size: 8,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'PREMIUM SELECTION',
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textSecondary,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ],
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildInfoChip(Icons.timer_outlined, '25-30 min'),
+                      _buildInfoChip(Icons.local_fire_department_outlined, '450 kcal'),
+                      _buildInfoChip(Icons.star_rounded, '${widget.item.rating} Rating', color: Colors.amber),
+                    ],
+                  ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
+                  const SizedBox(height: 32),
+                  Text(
+                    'Description',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            widget.item.name, 
-                            style: GoogleFonts.poppins(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              color: Theme.of(context).colorScheme.onSurface,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                        ),
-                        _buildRatingBadge(),
-                      ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.item.description ?? 'Experience the perfect harmony of fresh ingredients and traditional recipes. Our master chefs bring you a dish that is as beautiful to look at as it is to taste.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      height: 1.8,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      widget.item.description ?? 'A masterpiece of culinary art, prepared with hand-picked ingredients and a secret blend of authentic spices.',
-                      style: GoogleFonts.poppins(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                        height: 1.7,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w400,
+                  ).animate().fadeIn(delay: 400.ms),
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Quantity',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ).animate().fadeIn(delay: 200.ms),
-                    const SizedBox(height: 32),
-                    
-                    // Quantity Selection Section
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'ORDER QUANTITY',
-                              style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textSecondary,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Customize your serving',
-                              style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textPlaceholder),
-                            ),
-                          ],
-                        ),
-                        _buildQuantitySelector(),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 140), // Spacing for bottom sheet
-                  ],
-                ),
+                      _buildQuantitySelector(),
+                    ],
+                  ).animate().fadeIn(delay: 500.ms),
+                  const SizedBox(height: 120),
+                ],
               ),
             ),
           ),
         ],
       ),
-      bottomSheet: _buildPremiumBottomBar(),
+      bottomSheet: _buildPremiumActionBar(),
     );
   }
 
-  Widget _buildRatingBadge() {
+  Widget _buildInfoChip(IconData icon, String label, {Color? color}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.05)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star_rounded, color: AppColors.primary, size: 18),
-          const SizedBox(width: 4),
+          Icon(icon, size: 16, color: color ?? AppColors.primary),
+          const SizedBox(width: 6),
           Text(
-            widget.item.rating.toString(),
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 16),
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+            ),
           ),
         ],
       ),
@@ -220,102 +205,103 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
   Widget _buildQuantitySelector() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface1,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.surface3.withOpacity(0.5)),
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.all(4),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _quantityButton(Icons.remove_rounded, () {
-            if (_quantity > 1) setState(() => _quantity--);
-          }),
+          _qBtn(Icons.remove_rounded, () { if (_quantity > 1) setState(() => _quantity--); }),
           Container(
-            constraints: const BoxConstraints(minWidth: 40),
-            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               _quantity.toString(),
-              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
+              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w900),
             ),
           ),
-          _quantityButton(Icons.add_rounded, () {
-            setState(() => _quantity++);
-          }, isAdd: true),
+          _qBtn(Icons.add_rounded, () { setState(() => _quantity++); }, fill: true),
         ],
       ),
     );
   }
 
-  Widget _buildPremiumBottomBar() {
+  Widget _qBtn(IconData icon, VoidCallback onTap, {bool fill = false}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: fill ? AppColors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: fill ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)] : [],
+        ),
+        child: Icon(icon, size: 20, color: AppColors.primary),
+      ),
+    );
+  }
+
+  Widget _buildPremiumActionBar() {
     return Container(
-      height: 120,
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.4 : 0.08),
-            blurRadius: 30,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
             offset: const Offset(0, -10),
           ),
         ],
       ),
       child: Row(
         children: [
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'TOTAL PRICE',
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 1,
-                  ),
-                ),
-                Text(
-                  '${AppConstants.currency}${(widget.item.price * _quantity).toStringAsFixed(0)}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 26,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Price per person',
+                style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${AppConstants.currency}${(widget.item.price * _quantity).toStringAsFixed(0)}',
+                style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.primary),
+              ),
+            ],
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 24),
           Expanded(
-            flex: 2,
-            child: Container(
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: ElevatedButton(
-                onPressed: _handleAddToCart,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            child: GestureDetector(
+              onTap: _handleAddToCart,
+              child: Container(
+                height: 64,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  'Add to Cart',
-                  style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Add to Bag',
+                      style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+                    ),
+                  ],
                 ),
               ),
-            ),
+            ).animate().shimmer(delay: 1.seconds, duration: 2.seconds),
           ),
         ],
       ),
@@ -330,36 +316,11 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$_quantity items added successfully'),
+        content: Text('Delight added to bag!'),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.text,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  Widget _quantityButton(IconData icon, VoidCallback onTap, {bool isAdd = false}) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: isAdd ? AppColors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: isAdd ? [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              )
-            ] : [],
-          ),
-          child: Icon(icon, size: 22, color: AppColors.primary),
-        ),
+        backgroundColor: AppColors.slateMidnight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        margin: const EdgeInsets.all(20),
       ),
     );
   }

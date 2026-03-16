@@ -5,15 +5,23 @@ export const createReservation = async (req: any, res: Response) => {
   try {
     const { date, time, partySize, specialRequest } = req.body;
     const userId = req.user.id;
+    
+    // Check for deposit requirement in settings
+    const settings = await prisma.settings.findUnique({ where: { id: 'global' } });
+    const depositAmount = Number(settings?.reservationDeposit || 0);
+
     const reservation = await prisma.reservation.create({
       data: {
         userId,
         date: new Date(date),
         time,
         partySize,
-        specialRequest
+        specialRequest,
+        depositAmount,
+        status: depositAmount > 0 ? "AWAITING_PAYMENT" : "PENDING"
       }
     });
+
     res.status(201).json(reservation);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -89,6 +97,32 @@ export const updateReservationStatus = async (req: Request, res: Response) => {
         await createNotification(reservation.userId, title, message, "RESERVATION");
     }
     
+    res.json(reservation);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const payReservation = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const reservation = await prisma.reservation.update({
+      where: { id },
+      data: { 
+        status: "PENDING", 
+        depositPaid: true,
+        paymentId: `PAY_RES_${Date.now()}`
+      }
+    });
+
+    // Notify user of payment success
+    await createNotification(
+      reservation.userId, 
+      "Deposit Received", 
+      "We've received your deposit. Your reservation is now pending restaurant confirmation.", 
+      "RESERVATION"
+    );
+
     res.json(reservation);
   } catch (error: any) {
     res.status(400).json({ message: error.message });

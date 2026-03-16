@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { io } from 'socket.io-client';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { 
@@ -33,16 +33,14 @@ const WaiterDashboard = () => {
 
   const fetchInitialData = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
       const [ordersRes, menuRes, tablesRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/orders', config),
-        axios.get('http://localhost:5000/api/admin/menu', config),
-        axios.get('http://localhost:5000/api/tables', config)
+        api.get('/orders'),
+        api.get('/admin/menu'),
+        api.get('/tables')
       ]);
       
-      setAllOrders(ordersRes.data.filter((o: any) => o.status !== 'COMPLETED'));
-      const readyOnly = ordersRes.data.filter((o: any) => o.status === 'READY');
+      setAllOrders((ordersRes.data.orders || []).filter((o: any) => o.status !== 'COMPLETED'));
+      const readyOnly = (ordersRes.data.orders || []).filter((o: any) => o.status === 'READY');
       setReadyOrders(readyOnly);
       setMenuItems(menuRes.data);
       setTables(tablesRes.data);
@@ -55,9 +53,7 @@ const WaiterDashboard = () => {
 
   const printBill = async (orderId: string) => {
     try {
-      await axios.post(`http://localhost:5000/api/orders/${orderId}/bill`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      await api.post(`/orders/${orderId}/bill`, {});
       alert('Bill sent to printer');
     } catch (err) {
       console.error('Failed to print bill:', err);
@@ -67,10 +63,7 @@ const WaiterDashboard = () => {
 
   const markAsServed = async (orderId: string) => {
     try {
-      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, 
-        { status: 'SERVED' },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }}
-      );
+      await api.put(`/orders/${orderId}/status`, { status: 'SERVED' });
     } catch (err) {
       console.error('Failed to mark as served:', err);
     }
@@ -78,10 +71,7 @@ const WaiterDashboard = () => {
 
   const markAsPaid = async (orderId: string) => {
     try {
-      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, 
-        { status: 'COMPLETED' },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }}
-      );
+      await api.put(`/orders/${orderId}/status`, { status: 'COMPLETED' });
     } catch (err) {
       console.error('Failed to mark as paid:', err);
     }
@@ -90,7 +80,7 @@ const WaiterDashboard = () => {
   useEffect(() => {
     fetchInitialData();
 
-    const socket = io('http://localhost:5000');
+    const socket = io(import.meta.env.VITE_APP_SOCKET_URL || 'http://localhost:5000');
     
     socket.on('connect', () => {
       console.log('Waiter App Connected');
@@ -137,7 +127,7 @@ const WaiterDashboard = () => {
         } catch (e) {
           console.error("Invalid QR Code", e);
         }
-      }, (error) => {
+      }, () => {
         // Suppress scanning errors
       });
 
@@ -149,15 +139,12 @@ const WaiterDashboard = () => {
 
   const handleScanSuccess = async (tableNumber: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      
       // 1. Find the table ID by Number
       const table = tables.find(t => t.tableNumber === tableNumber);
       if (!table) throw new Error("Table not found");
 
       // 2. Fetch Aggregated Bill
-      const res = await axios.get(`http://localhost:5000/api/tables/${table.id}/bill`, config);
+      const res = await api.get(`/tables/${table.id}/bill`);
       setTableBill(res.data);
     } catch (err: any) {
       alert(err.response?.data?.message || err.message || "Failed to fetch table bill");
@@ -167,12 +154,9 @@ const WaiterDashboard = () => {
   const settleTable = async () => {
     if (!tableBill) return;
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      
       // Mark all orders as COMPLETED (and auto-paid in backend logic)
       await Promise.all(tableBill.orders.map((orderId: string) => 
-        axios.put(`http://localhost:5000/api/orders/${orderId}/status`, { status: 'COMPLETED' }, config)
+        api.put(`/orders/${orderId}/status`, { status: 'COMPLETED' })
       ));
 
       setTableBill(null);
@@ -186,15 +170,14 @@ const WaiterDashboard = () => {
   const handleCreateManualOrder = async () => {
     if (!newOrder.tableId || newOrder.items.length === 0) return;
     try {
-      const token = localStorage.getItem('token');
       const totalPrice = newOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
-      await axios.post('http://localhost:5000/api/orders', {
+      await api.post('/orders', {
         ...newOrder,
         totalPrice,
         deliveryType: 'PICKUP', // In-restaurant
         paymentMethod: 'COD'
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       
       setIsOrderModalOpen(false);
       setNewOrder({ tableId: '', items: [] });

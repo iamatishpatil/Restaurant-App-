@@ -2,7 +2,7 @@ export const getImageUrl = (path: string | null | undefined): string => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
   // For locally uploaded images served from the backend
-  const baseUrl = 'http://localhost:5000';
+  const baseUrl = import.meta.env.VITE_APP_IMAGE_BASE_URL || 'http://localhost:5000';
   return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
 };
 

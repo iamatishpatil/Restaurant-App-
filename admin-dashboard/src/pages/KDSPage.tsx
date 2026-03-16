@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { io } from 'socket.io-client';
 import { 
   ChefHat, 
@@ -17,9 +17,7 @@ const KDSPage = () => {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/orders', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await api.get('/orders');
       // Only show active kitchen orders (NEW_ORDER, ACCEPTED, PREPARING)
       const activeOrders = res.data.filter((o: any) => 
         ['NEW_ORDER', 'ACCEPTED', 'PREPARING'].includes(o.status)
@@ -35,7 +33,7 @@ const KDSPage = () => {
   useEffect(() => {
     fetchOrders();
 
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io(import.meta.env.VITE_APP_SOCKET_URL || 'http://localhost:5000');
 
     newSocket.on('connect', () => {
       console.log('KDS Connected to Socket.io');
@@ -65,10 +63,7 @@ const KDSPage = () => {
 
   const updateStatus = async (orderId: string, newStatus: string) => {
     try {
-      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, 
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }}
-      );
+      await api.put(`/orders/${orderId}/status`, { status: newStatus });
       // Local state will be updated via socket listener 'status_update'
     } catch (err) {
       console.error('Failed to update status:', err);

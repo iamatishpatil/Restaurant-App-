@@ -35,6 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategoryId = 'ALL';
   bool _isLoading = true;
   int _bannerIndex = 0;
+  List<MenuItem> _buyAgainItems = [];
+  List<MenuItem> _suggestionItems = [];
+  int _waitTime = 15;
 
   @override
   void initState() {
@@ -48,6 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ApiService.get('/menu/categories'),
         ApiService.get('/menu/items'),
         ApiService.get('/admin/banners'),
+        ApiService.get('/orders/recommendations'),
+        ApiService.get('/orders/wait-time'),
       ]);
 
       if (responses[0].statusCode == 200) {
@@ -60,6 +65,14 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       if (responses[2].statusCode == 200) {
         _banners = jsonDecode(responses[2].body);
+      }
+      if (responses[3].statusCode == 200) {
+        final recData = jsonDecode(responses[3].body);
+        _buyAgainItems = (recData['buyAgain'] as List).map((i) => MenuItem.fromJson(i)).toList();
+        _suggestionItems = (recData['suggestions'] as List).map((i) => MenuItem.fromJson(i)).toList();
+      }
+      if (responses[4].statusCode == 200) {
+        _waitTime = jsonDecode(responses[4].body)['estimatedWait'] ?? 15;
       }
 
       setState(() {
@@ -248,11 +261,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       });
                     },
                   ),
-                ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1, end: 0),
+                ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1, end: 0, curve: Curves.easeOutBack),
   
                 if (_isLoading) _buildShimmerLoading() else ...[
-                  // Banners Carousel
-                  if (_banners.isNotEmpty) ...[
+                  ...[
                     CarouselSlider.builder(
                       itemCount: _banners.length,
                       itemBuilder: (context, index, realIndex) {
@@ -268,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onPageChanged: (index, reason) => setState(() => _bannerIndex = index),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Center(
                       child: AnimatedIndicator(
                         activeIndex: _bannerIndex,
@@ -308,8 +320,89 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                     ),
-                  ).animate().fadeIn(delay: 200.ms),
+                  ).animate().fadeIn(delay: 100.ms, duration: 400.ms).slideX(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
   
+                  if (_buyAgainItems.isNotEmpty) ...[
+                    _buildSectionHeader('Buy it again'),
+                    SizedBox(
+                      height: 260,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: _buyAgainItems.length,
+                        itemBuilder: (ctx, i) => SizedBox(
+                          width: 170,
+                          child: CravyoFoodCard(item: _buyAgainItems[i]),
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 300.ms),
+                  ],
+
+                  if (_suggestionItems.isNotEmpty) ...[
+                    _buildSectionHeader('Recommended for You'),
+                    SizedBox(
+                      height: 260,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: _suggestionItems.length,
+                        itemBuilder: (ctx, i) => SizedBox(
+                          width: 170,
+                          child: CravyoFoodCard(item: _suggestionItems[i]),
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 400.ms),
+                  ],
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.timer_outlined, color: Colors.white, size: 28),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Current Prep Time: $_waitTime mins',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Text(
+                                  'Freshly cooked for you by our master chefs',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ).animate().fadeIn(delay: 500.ms).slideX(),
                   _buildSectionHeader('Popular Dishes'),
   
                   Consumer<ModeProvider>(
@@ -326,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          childAspectRatio: 0.68,
+                          childAspectRatio: 0.62, // Adjusted for premium card height
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                         ),
@@ -409,13 +502,13 @@ class _HomeScreenState extends State<HomeScreen> {
           child: GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.68, crossAxisSpacing: 16, mainAxisSpacing: 16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.62, crossAxisSpacing: 16, mainAxisSpacing: 16),
             itemCount: 4,
-            itemBuilder: (_, __) => const CravyoShimmer(width: double.infinity, height: 200, borderRadius: AppRadius.xl),
+            itemBuilder: (_, __) => const CravyoShimmer(width: double.infinity, height: 210, borderRadius: AppRadius.xl),
           ),
         ),
       ],
-    );
+    ).animate().fadeIn(duration: 800.ms);
   }
 }
 

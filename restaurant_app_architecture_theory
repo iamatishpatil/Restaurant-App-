@@ -1,0 +1,62 @@
+# Restaurant App: Deep-Dive Architecture Theory
+
+## 1. System Philosophy & Pattern Overlays
+The system is built as a **Distributed Events-Driven Architecture** (EDA) wrapped in a **Request-Response RESTful API**. It leverages a **Micro-Frontend-like approach** where distinct clients (Admin Web, Customer Mobile) interact with a unified backend but manage their own state domains.
+
+### Technology Stack (The "Modern Web" Stack)
+- **Backend**: Node.js, Express, TypeScript, Prisma ORM.
+- **Database**: PostgreSQL (Relational integrity for complex financial/order data).
+- **Real-time**: Socket.io (Bi-directional binary/string event propagation).
+- **Web Frontend**: React (Vite-powered for HMR and performance).
+- **Mobile Mobile**: Flutter (Native performance with multi-platform parity).
+
+---
+
+## 2. Backend Architecture: The Core Engine
+
+### A. Authentication & Granular RBAC
+The system implements a robust **JWT-based Authentication** layer with a secondary **Authorization Middleware** ([authorize(...roles)](file:///c:/Users/admin/Desktop/Restaurant%20App/backend/src/middlewares/authMiddleware.ts#30-38)). 
+- **Middlewares**: Standardized [authenticate](file:///c:/Users/admin/Desktop/Restaurant%20App/backend/src/middlewares/authMiddleware.ts#14-29) (identity verification) and [authorize](file:///c:/Users/admin/Desktop/Restaurant%20App/backend/src/middlewares/authMiddleware.ts#30-38) (role-gatekeepers).
+- **Roles**: Enforced at the database level via PostgreSQL Enums (`ADMIN`, `MANAGER`, `CHEF`, `WAITER`, `CUSTOMER`).
+- **Security**: Password hashing and environment-variable-driven secret management.
+
+### B. Real-time Event Bus (Socket.io Topology)
+The [SocketService](file:///c:/Users/admin/Desktop/Restaurant%20App/backend/src/services/socketService.ts#4-59) is the nervous system of the application. It uses a **Room-based Messaging Pattern** to minimize broadcast noise:
+- **`kitchen` room**: Receives new order events and preparation status updates.
+- **`waiters` room**: Receives "Ready for Pickup" and order adjustment events.
+- **`admins` room**: Overarching visibility for all operational events.
+- **`order_{id}` room**: Targeted updates for specific customer tracking.
+
+### C. Data Persistence & ORM Strategy
+**Prisma** is used to enforce strict type-safety between the database and the logic layer.
+- **Complex Relations**: 1-to-Many (Orders-to-StatusLogs) and Many-to-Many (OrderItems acting as a join table between Orders and MenuItems).
+- **Transactional Integrity**: Critical for order placement (e.g., updating inventory while creating order items).
+- **Audit Trails**: The schema includes `OrderStatusLog` for state-tracking logic; however, full integration into controller lifecycle hooks is ongoing (Model exists, but active logging is pending implementation in the controller layer).
+
+---
+
+## 3. Frontend Architecture: State & Synchronization
+
+### A. Admin Dashboard (React)
+- **Component Architecture**: Modular component-based hierarchy with specialized layout containers (`AdminLayout`, [Sidebar](file:///c:/Users/admin/Desktop/Restaurant%20App/admin-dashboard/src/components/Sidebar.tsx#24-126)).
+- **State Management**: React Context (`AuthContext`) for global state (user profile, token) and local state/hooks for feature-specific data.
+- **Routing**: `react-router-dom` with [ProtectedRoute](file:///c:/Users/admin/Desktop/Restaurant%20App/admin-dashboard/src/App.tsx#22-36) wrappers for RBAC enforcement at the UI layer.
+
+### B. Customer App (Flutter)
+- **Reactive Pattern**: Uses `Provider` for reactive UI updates when cart or user status changes.
+- **Multi-Provider Paradigm**: Decoupled providers for [Auth](file:///c:/Users/admin/Desktop/Restaurant%20App/backend/src/middlewares/authMiddleware.ts#10-13), `Cart`, `Location`, `Navigation`, and `ThemeProvider`.
+- **Infrastructure Integration**: Uses `LocationProvider` for geo-fencing or address-based service logic.
+
+---
+
+## 4. Operational Resiliency & Implementation Status
+
+### A. Current Realized Features
+- **Rate Limiting**: `express-rate-limit` prevents brute-force attacks on auth endpoints and API spam.
+- **Global Error Handling**: Centralized structured JSON responses.
+- **FCM Foundations**: [notificationService.ts](file:///c:/Users/admin/Desktop/Restaurant%20App/backend/src/services/notificationService.ts) is configured for Firebase Cloud Messaging, though the DB persistence model for notifications is currently an area of active development.
+
+### B. Future Scaling Vectors
+1. **Vertical Scaling**: The API can be containerized (Docker) and scaled behind a Load Balancer (NGINX/ALB).
+2. **Real-time Scaling**: Integration with Redis Adapter for Socket.io to support multiple backend nodes.
+3. **Database Scaling**: Prisma's architecture allows for easy migration to Read Replicas for heavy reporting tasks.

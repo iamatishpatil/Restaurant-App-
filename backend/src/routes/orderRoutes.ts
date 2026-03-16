@@ -1,11 +1,13 @@
 import { Router } from "express";
-import { createOrder, getMyOrders, getOrderById, updateOrderStatus, getAllOrders, generateBill } from "../controllers/orderController";
+import { createOrder, getMyOrders, getOrderById, updateOrderStatus, getAllOrders, generateBill, getRecommendations, getEstimatedWaitTime } from "../controllers/orderController";
 import { authenticate, authorize } from "../middlewares/authMiddleware";
 
 const router = Router();
 
 router.post("/", authenticate, createOrder);
 router.get("/my", authenticate, getMyOrders);
+router.get("/recommendations", authenticate, getRecommendations);
+router.get("/wait-time", getEstimatedWaitTime); // Public info
 router.get("/:id", authenticate, getOrderById);
 
 // Admin / Kitchen Routes

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { LogIn, Utensils, Eye, EyeOff } from 'lucide-react';
@@ -19,8 +19,8 @@ const LoginPage = () => {
     setIsLoading(true);
     try {
       const isPhone = /^\d+$/.test(identifier);
-      const payload = isPhone ? { phone: identifier, password } : { email: identifier, password };
-      const res = await axios.post('http://localhost:5000/api/auth/login', payload);
+      const payLoad = isPhone ? { phone: identifier, password } : { email: identifier, password };
+      const res = await api.post('/auth/login', payLoad);
       const user = res.data.user;
       
       login(user, res.data.token);

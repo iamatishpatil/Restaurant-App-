@@ -8,21 +8,28 @@ export const createTable = async (req: Request, res: Response) => {
   const { tableNumber, capacity } = req.body;
 
   try {
-    // Generate QR code data (e.g., a URL to the customer app with table/restaurant IDs)
+    // 1. Create table first to get the ID
+    let table = await prisma.table.create({
+      data: {
+        tableNumber,
+        capacity,
+        status: 'AVAILABLE'
+      }
+    });
+
+    // 2. Generate QR code data with the newly created table ID
     const qrData = JSON.stringify({
-      tableNumber,
+      id: table.id,
+      tableNumber: table.tableNumber,
       action: 'ORDER'
     });
 
     const qrCodeUrl = await QRCode.toDataURL(qrData);
 
-    const table = await prisma.table.create({
-      data: {
-        tableNumber,
-        capacity,
-        qrCode: qrCodeUrl,
-        status: 'AVAILABLE'
-      }
+    // 3. Update the table with the QR code
+    table = await prisma.table.update({
+      where: { id: table.id },
+      data: { qrCode: qrCodeUrl }
     });
 
     res.status(201).json(table);

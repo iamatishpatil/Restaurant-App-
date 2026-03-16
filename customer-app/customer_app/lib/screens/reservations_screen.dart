@@ -52,6 +52,22 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
     }
   }
 
+  Future<void> _payDeposit(String id) async {
+    try {
+      final response = await ApiService.put('/reservations/$id/pay', {});
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Payment Successful! Deposit received.')),
+          );
+          _fetchReservations();
+        }
+      }
+    } catch (e) {
+      debugPrint('Payment failed: $e');
+    }
+  }
+
   void _showBookingModal() {
     String date = DateTime.now().add(const Duration(days: 1)).toString().split(' ')[0];
     String time = "19:00";
@@ -177,10 +193,26 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                               padding: const EdgeInsets.only(top: 8),
                               child: Text('Table: ${r['table']['tableNumber']}', style: GoogleFonts.poppins(color: Colors.green, fontWeight: FontWeight.bold)),
                             ),
-                          if (r['status'] == 'CANCELLED' && r['rejectionReason'] != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
                               child: Text('Reason: ${r['rejectionReason']}', style: GoogleFonts.poppins(color: Colors.red.shade400, fontSize: 13, fontWeight: FontWeight.w500)),
+                            ),
+                          if (r['status'] == 'AWAITING_PAYMENT')
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _payDeposit(r['id']),
+                                  icon: const Icon(Icons.payment_rounded, size: 18),
+                                  label: Text('Pay Deposit (₹${r['depositAmount']})'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.primary,
+                                    side: const BorderSide(color: AppColors.primary),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
                             ),
                         ]
                       )

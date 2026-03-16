@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Phone, Mail, Calendar, Users } from 'lucide-react';
 
 const CustomerManagement = () => {
@@ -13,10 +13,7 @@ const CustomerManagement = () => {
   const fetchCustomers = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/admin/users', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/admin/users');
       setCustomers(res.data.filter((u: any) => u.role === 'CUSTOMER'));
     } catch (err) {
       console.error(err);

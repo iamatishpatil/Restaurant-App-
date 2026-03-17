@@ -329,11 +329,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 8),
                   _buildSectionHeader('Explore Menu', icon: Icons.explore_rounded, onSeeAll: () {}),
                   SizedBox(
-                    height: 110,
+                    height: 125,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      clipBehavior: Clip.none,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       itemCount: _categories.length + 1,
                       itemBuilder: (ctx, i) {
                         if (i == 0) {
@@ -479,50 +480,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  IconData _getCategoryIcon(String? name) {
-    if (name == null || name.isEmpty) return Icons.fastfood_rounded;
-    final n = name.trim().toLowerCase();
-    
-    // Beverage & Drinks
-    if (n.contains('beverage') || n.contains('drink') || n.contains('juice') || n.contains('tea') || n.contains('coffee') || n.contains('shake')) {
-      return Icons.local_drink_rounded;
-    }
-    
-    // Main Course, Rice & Biryani
-    if (n.contains('biryani') || n.contains('rice') || n.contains('pulao') || n.contains('thali')) {
-      return Icons.rice_bowl_rounded;
-    }
-    
-    // Breads
-    if (n.contains('bread') || n.contains('roti') || n.contains('naan') || n.contains('kulcha') || n.contains('paratha')) {
-      return Icons.bakery_dining_rounded;
-    }
-    
-    // Fast Food
+  IconData _getCategoryIcon(String name) {
+    final n = name.toLowerCase();
     if (n.contains('burger')) return Icons.lunch_dining_rounded;
     if (n.contains('pizza')) return Icons.local_pizza_rounded;
-    if (n.contains('sandwich')) return Icons.lunch_dining_rounded;
-    
-    // Deserts & Sweets
-    if (n.contains('dessert') || n.contains('sweet') || n.contains('cake') || n.contains('ice cream') || n.contains('pudding')) {
-      return Icons.icecream_rounded;
-    }
-    
-    // Non-Veg
-    if (n.contains('chicken') || n.contains('meat') || n.contains('fish') || n.contains('mutton') || n.contains('kebab')) {
-      return Icons.kebab_dining_rounded;
-    }
-    
-    // Veg & Starters
-    if (n.contains('salad') || n.contains('veg') || n.contains('starter') || n.contains('paneer')) {
-      return Icons.spa_rounded;
-    }
-    
-    // Regional & Others
-    if (n.contains('south indian') || n.contains('dosa') || n.contains('idli')) return Icons.dinner_dining_rounded;
-    if (n.contains('chinese') || n.contains('noodle') || n.contains('soup')) return Icons.ramen_dining_rounded;
-    
-    return Icons.restaurant_rounded;
+    if (n.contains('beverage') || n.contains('drink') || n.contains('juice')) return Icons.local_bar_rounded;
+    if (n.contains('biryani') || n.contains('rice')) return Icons.set_meal_rounded;
+    if (n.contains('bread') || n.contains('roti')) return Icons.bakery_dining_rounded;
+    if (n.contains('dessert') || n.contains('sweet') || n.contains('cake')) return Icons.cake_rounded;
+    if (n.contains('chicken') || n.contains('meat')) return Icons.kebab_dining_rounded;
+    if (n.contains('salad') || n.contains('veg')) return Icons.spa_rounded;
+    if (n.contains('south indian') || n.contains('dosa')) return Icons.dinner_dining_rounded;
+    if (n.contains('chinese') || n.contains('noodle')) return Icons.ramen_dining_rounded;
+    return Icons.fastfood_rounded;
   }
 
   Widget _buildSectionHeader(String title, {IconData? icon, VoidCallback? onSeeAll}) {

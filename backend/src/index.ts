@@ -19,6 +19,7 @@ import reviewRoutes from "./routes/reviewRoutes";
 import uploadRoutes from "./routes/uploadRoutes";
 import reservationRoutes from "./routes/reservationRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
+import couponRoutes from "./routes/couponRoutes";
 import { socketService } from "./services/socketService";
 
 const app: Application = express();
@@ -47,6 +48,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/coupons", couponRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Health & Welcome

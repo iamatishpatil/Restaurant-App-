@@ -31,10 +31,11 @@ const CouponManagement = () => {
     setIsLoading(true);
     try {
       const payload = {
-        ...newCoupon,
-        type: 'PERCENTAGE',
+        code: newCoupon.code.toUpperCase(),
         discount: parseFloat(newCoupon.discountPercent),
-        minOrderAmount: parseFloat(newCoupon.minOrderAmount) || 0
+        minOrderAmount: parseFloat(newCoupon.minOrderAmount) || 0,
+        expiryDate: new Date(newCoupon.expiryDate).toISOString(),
+        isActive: true
       };
 
       if (editingId) {

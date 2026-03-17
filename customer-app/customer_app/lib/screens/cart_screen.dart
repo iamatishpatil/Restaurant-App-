@@ -21,6 +21,71 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
+  final TextEditingController _couponController = TextEditingController();
+  dynamic _appliedCoupon;
+  bool _isValidatingCoupon = false;
+  String? _couponError;
+
+  @override
+  void dispose() {
+    _couponController.dispose();
+    super.dispose();
+  }
+
+  void _handleApplyCoupon() async {
+    if (_couponController.text.trim().isEmpty) return;
+
+    setState(() {
+      _isValidatingCoupon = true;
+      _couponError = null;
+    });
+
+    try {
+      final response = await ApiService.post('/coupons/validate', {
+        'code': _couponController.text.trim().toUpperCase(),
+      });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _appliedCoupon = data['coupon'];
+          _couponError = null;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Coupon "${_appliedCoupon['code']}" applied!'),
+              backgroundColor: const Color(0xFF00C853),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } else {
+        final errorData = jsonDecode(response.body);
+        setState(() {
+          _appliedCoupon = null;
+          _couponError = errorData['message'] ?? 'Invalid coupon';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _couponError = 'Connection error';
+      });
+    } finally {
+      setState(() {
+        _isValidatingCoupon = false;
+      });
+    }
+  }
+
+  void _removeCoupon() {
+    setState(() {
+      _appliedCoupon = null;
+      _couponController.clear();
+      _couponError = null;
+    });
+  }
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
@@ -323,15 +388,23 @@ class _CartScreenState extends State<CartScreen> {
               ],
             ),
           ).animate().slideY(begin: 0.5, end: 0).fadeIn(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+          
+          _buildCouponSection(),
+          const SizedBox(height: 12),
           
           _billRow('Subtotal', '${AppConstants.currency}${cart.totalAmount.toStringAsFixed(0)}'),
+          if (_appliedCoupon != null)
+            _billRow(
+              'Discount (${_appliedCoupon['code']})', 
+              '-${AppConstants.currency}${_appliedCoupon['discount'].toStringAsFixed(0)}', 
+              isGreen: true
+            ),
           _billRow('Tax & Service', 'Included', isGreen: true),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1, color: AppColors.surface3),
           ),
-          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -340,7 +413,7 @@ class _CartScreenState extends State<CartScreen> {
                 style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
               ),
               Text(
-                '${AppConstants.currency}${cart.totalAmount.toStringAsFixed(0)}',
+                '${AppConstants.currency}${(_appliedCoupon != null ? (cart.totalAmount - _appliedCoupon['discount']) : cart.totalAmount).toStringAsFixed(0)}',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   color: AppColors.primary,
@@ -452,6 +525,8 @@ class _CartScreenState extends State<CartScreen> {
       'deliveryType': 'DINE_IN',
       'tableId': table.activeTableId,
       'paymentMethod': paymentMethod,
+      'couponCode': _appliedCoupon?['code'],
+      'discountAmount': (_appliedCoupon?['discount'] ?? 0).toDouble(),
     };
 
     try {
@@ -513,6 +588,92 @@ class _CartScreenState extends State<CartScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCouponSection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _appliedCoupon != null 
+            ? const Color(0xFF00C853).withOpacity(0.3) 
+            : (_couponError != null ? Colors.red.withOpacity(0.3) : Theme.of(context).dividerColor.withOpacity(0.05)),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Row(
+              children: [
+                const Icon(Icons.confirmation_number_outlined, size: 16, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'HAVE A COUPON?',
+                  style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.primary, letterSpacing: 0.5),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 10, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _couponController,
+                    enabled: _appliedCoupon == null,
+                    textCapitalization: TextCapitalization.characters,
+                    style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold),
+                    decoration: InputDecoration(
+                      hintText: 'Enter code here...',
+                      hintStyle: GoogleFonts.poppins(fontSize: 13, color: AppColors.textPlaceholder),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+                if (_isValidatingCoupon)
+                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                else if (_appliedCoupon != null)
+                  GestureDetector(
+                    onTap: _removeCoupon,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(color: const Color(0xFF00C853).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF00C853)),
+                          const SizedBox(width: 4),
+                          Text('APPLIED', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w900, color: const Color(0xFF00C853))),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  TextButton(
+                    onPressed: _handleApplyCoupon,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text('APPLY', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                  ),
+              ],
+            ),
+          ),
+          if (_couponError != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 14, bottom: 8),
+              child: Text(_couponError!, style: GoogleFonts.poppins(fontSize: 11, color: Colors.red, fontWeight: FontWeight.w600)),
+            ),
+        ],
       ),
     );
   }

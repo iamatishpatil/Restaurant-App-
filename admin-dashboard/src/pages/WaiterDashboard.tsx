@@ -39,8 +39,9 @@ const WaiterDashboard = () => {
         api.get('/tables')
       ]);
       
-      setAllOrders((ordersRes.data.orders || []).filter((o: any) => o.status !== 'COMPLETED'));
-      const readyOnly = (ordersRes.data.orders || []).filter((o: any) => o.status === 'READY');
+      const orders = Array.isArray(ordersRes.data) ? ordersRes.data : (ordersRes.data.orders || []);
+      setAllOrders(orders.filter((o: any) => o.status !== 'COMPLETED'));
+      const readyOnly = orders.filter((o: any) => o.status === 'READY');
       setReadyOrders(readyOnly);
       setMenuItems(menuRes.data);
       setTables(tablesRes.data);
@@ -175,7 +176,7 @@ const WaiterDashboard = () => {
       await api.post('/orders', {
         ...newOrder,
         totalPrice,
-        deliveryType: 'PICKUP', // In-restaurant
+        deliveryType: 'DINE_IN', // In-restaurant table order
         paymentMethod: 'COD'
       });
       

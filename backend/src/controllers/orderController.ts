@@ -17,11 +17,13 @@ const orderSchema = z.object({
   tableId: z.string().nullable().optional(),
   addressId: z.string().optional(),
   paymentMethod: z.enum(["UPI", "CARD", "COD"]).default("UPI"),
+  couponCode: z.string().nullable().optional(),
+  discountAmount: z.number().default(0),
 });
 
 export const createOrder = async (req: any, res: Response) => {
   try {
-    const { items, totalPrice, deliveryType, addressId, tableId } = orderSchema.parse(req.body);
+    const { items, totalPrice, deliveryType, addressId, tableId, couponCode, discountAmount } = orderSchema.parse(req.body);
     let { paymentMethod } = req.body;
     
     // For DINE_IN, always default to COD (Pay at Restaurant) for post-paid flow
@@ -38,11 +40,13 @@ export const createOrder = async (req: any, res: Response) => {
           userId,
           subtotal: totalPrice,
           taxAmount: 0,
-          grandTotal: totalPrice,
+          discountAmount: discountAmount || 0,
+          grandTotal: Math.max(0, totalPrice - (discountAmount || 0)),
           deliveryType,
           tableId: (deliveryType === "DINE_IN" ? tableId : null) || null,
           addressId: deliveryType === "DELIVERY" ? addressId : null,
           status: "NEW_ORDER",
+          notes: couponCode ? `Coupon applied: ${couponCode}` : null,
           orderItems: {
             create: items.map((item: any) => ({
               menuItemId: item.menuItemId,
@@ -60,7 +64,7 @@ export const createOrder = async (req: any, res: Response) => {
           orderId: newOrder.id,
           method: paymentMethod as string,
           status: paymentMethod === "COD" ? "PENDING" : "COMPLETED",
-          amount: totalPrice,
+          amount: Math.max(0, totalPrice - (discountAmount || 0)),
           transactionId: paymentMethod === "COD" ? null : `TXN_${Date.now()}`,
         }
       });
@@ -108,7 +112,8 @@ export const getOrderById = async (req: Request, res: Response) => {
       include: { 
         orderItems: { include: { menuItem: true } }, 
         user: true,
-        address: true 
+        address: true,
+        table: true
       },
     });
     if (!order) return res.status(404).json({ message: "Order not found" });
@@ -226,6 +231,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
         user: true, 
         address: true,
         payments: true,
+        table: true,
         orderItems: {
           include: {
             menuItem: true

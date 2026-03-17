@@ -151,6 +151,7 @@ const StaffManagement = () => {
                   onChange={(e) => setNewStaff({...newStaff, role: e.target.value})}
                 >
                   <option value="CHEF">Chef</option>
+                  <option value="WAITER">Waiter</option>
                   <option value="MANAGER">Manager</option>
                   <option value="DELIVERY">Delivery</option>
                   <option value="ADMIN">Admin</option>

@@ -16,8 +16,9 @@ export const getCategories = async (req: Request, res: Response) => {
 
 export const createCategory = async (req: Request, res: Response) => {
   try {
+    const { name, image, description } = req.body;
     const category = await prisma.menuCategory.create({ 
-      data: req.body
+      data: { name, image, description }
     });
     res.status(201).json(category);
   } catch (error: any) {
@@ -28,9 +29,10 @@ export const createCategory = async (req: Request, res: Response) => {
 export const updateCategory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const { name, image, description } = req.body;
     const category = await prisma.menuCategory.update({
       where: { id: id as string },
-      data: req.body
+      data: { name, image, description }
     });
     res.json(category);
   } catch (error: any) {
@@ -66,11 +68,14 @@ export const getCoupons = async (req: Request, res: Response) => {
 
 export const createCoupon = async (req: Request, res: Response) => {
   try {
+    const { code, discount, minOrderAmount, expiryDate, isActive } = req.body;
     const coupon = await prisma.coupon.create({ 
       data: { 
-        ...req.body, 
-        discount: Number(req.body.discount),
-        expiryDate: new Date(req.body.expiryDate) 
+        code: code.toUpperCase(),
+        discount: Number(discount),
+        minOrderAmount: Number(minOrderAmount) || 0,
+        expiryDate: new Date(expiryDate),
+        isActive: isActive !== undefined ? isActive : true
       } 
     });
     res.status(201).json(coupon);
@@ -82,10 +87,13 @@ export const createCoupon = async (req: Request, res: Response) => {
 export const updateCoupon = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { expiryDate, discount, ...data } = req.body;
-    const updateData: any = { ...data };
+    const { expiryDate, discount, minOrderAmount, code, isActive } = req.body;
+    const updateData: any = {};
+    if (code) updateData.code = code.toUpperCase();
     if (expiryDate) updateData.expiryDate = new Date(expiryDate);
     if (discount !== undefined) updateData.discount = Number(discount);
+    if (minOrderAmount !== undefined) updateData.minOrderAmount = Number(minOrderAmount);
+    if (isActive !== undefined) updateData.isActive = isActive;
     
     const coupon = await prisma.coupon.update({
       where: { id: id as string },

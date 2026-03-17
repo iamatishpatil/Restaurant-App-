@@ -58,7 +58,7 @@ class ProfileScreen extends StatelessWidget {
                         ]),
                         const SizedBox(height: 16),
                         _buildProfileCard([
-                          _buildProfileTile(context, Icons.support_agent_rounded, 'Help & Support', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()))),
+                          _buildProfileTile(context, Icons.live_help_rounded, 'Help & Support', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()))),
                           _buildProfileTile(context, Icons.security_rounded, 'Privacy & Safety', () {}),
                         ]),
                         const SizedBox(height: 16),
@@ -89,7 +89,7 @@ class ProfileScreen extends StatelessWidget {
                 color: AppColors.surface1,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.person_outline_rounded, size: 60, color: AppColors.primary.withOpacity(0.3)),
+              child: Icon(Icons.account_circle_rounded, size: 60, color: AppColors.primary.withOpacity(0.3)),
             ).animate().scale(duration: 600.ms, curve: Curves.bounceOut),
             const SizedBox(height: 40),
             Text(
@@ -136,7 +136,7 @@ class ProfileScreen extends StatelessWidget {
               child: CircleAvatar(
                 radius: 56,
                 backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                child: const Icon(Icons.person_rounded, size: 60, color: AppColors.primary),
+                child: const Icon(Icons.account_circle_rounded, size: 60, color: AppColors.primary),
               ),
             ),
             GestureDetector(

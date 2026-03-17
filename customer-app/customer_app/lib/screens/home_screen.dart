@@ -349,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return CravyoCategoryItem(
                           id: cat['id'],
                           name: cat['name'],
-                          icon: Icons.fastfood_rounded,
+                          icon: _getCategoryIcon(cat['name']),
                           imageUrl: cat['image'],
                           isSelected: _selectedCategoryId == cat['id'],
                           onTap: () => _fetchFilteredItems(cat['id']),
@@ -477,6 +477,21 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  IconData _getCategoryIcon(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('burger')) return Icons.lunch_dining_rounded;
+    if (n.contains('pizza')) return Icons.local_pizza_rounded;
+    if (n.contains('beverage') || n.contains('drink') || n.contains('juice')) return Icons.local_bar_rounded;
+    if (n.contains('biryani') || n.contains('rice')) return Icons.set_meal_rounded;
+    if (n.contains('bread') || n.contains('roti')) return Icons.bakery_dining_rounded;
+    if (n.contains('dessert') || n.contains('sweet') || n.contains('cake')) return Icons.cake_rounded;
+    if (n.contains('chicken') || n.contains('meat')) return Icons.kebab_dining_rounded;
+    if (n.contains('salad') || n.contains('veg')) return Icons.spa_rounded;
+    if (n.contains('south indian') || n.contains('dosa')) return Icons.dinner_dining_rounded;
+    if (n.contains('chinese') || n.contains('noodle')) return Icons.ramen_dining_rounded;
+    return Icons.fastfood_rounded;
   }
 
   Widget _buildSectionHeader(String title, {IconData? icon, VoidCallback? onSeeAll}) {

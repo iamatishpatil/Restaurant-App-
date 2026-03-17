@@ -228,7 +228,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
          child: FloatingActionButton.extended(
            onPressed: _showBookingModal,
            backgroundColor: AppColors.primary,
-           icon: const Icon(Icons.event_seat, color: Colors.white),
+           icon: const Icon(Icons.table_restaurant_rounded, color: Colors.white),
            label: const Text('Book Table', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
          ),
        ) : null,
@@ -249,7 +249,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                 color: Color(0xFFF9FAFB),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.lock_outline_rounded, size: 60, color: AppColors.primary.withOpacity(0.3)),
+              child: Icon(Icons.lock_person_rounded, size: 60, color: AppColors.primary.withOpacity(0.3)),
             ).animate().scale(duration: 600.ms, curve: Curves.bounceOut),
             const SizedBox(height: 32),
             Text(

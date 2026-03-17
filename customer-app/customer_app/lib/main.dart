@@ -281,9 +281,9 @@ class _MainScreenState extends State<MainScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround, // Better distribution
             children: [
-              _navItem(0, Icons.home_outlined, Icons.home_rounded, 'HOME', nav),
-              _navItem(1, Icons.event_available_outlined, Icons.event_available_rounded, 'BOOKINGS', nav),
-              _navItem(2, Icons.shopping_bag_outlined, Icons.shopping_bag_rounded, 'CART', nav),
+              _navItem(0, Icons.grid_view_outlined, Icons.grid_view_rounded, 'HOME', nav),
+              _navItem(1, Icons.restaurant_outlined, Icons.restaurant_rounded, 'BOOKINGS', nav),
+              _navItem(2, Icons.shopping_basket_outlined, Icons.shopping_basket_rounded, 'CART', nav),
               _navItem(3, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'ORDERS', nav),
             ],
           ),

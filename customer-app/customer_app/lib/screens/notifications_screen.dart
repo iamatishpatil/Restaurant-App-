@@ -185,9 +185,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   IconData _getIcon(String type) {
     switch (type) {
-      case 'RESERVATION': return Icons.event_seat_rounded;
+      case 'RESERVATION': return Icons.table_restaurant_rounded;
       case 'ORDER': return Icons.receipt_long_rounded;
-      default: return Icons.notifications_rounded;
+      default: return Icons.notifications_active_rounded;
     }
   }
 

@@ -129,8 +129,8 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildInfoChip(Icons.timer_outlined, '25-30 min'),
-                      _buildInfoChip(Icons.local_fire_department_outlined, '450 kcal'),
+                      _buildInfoChip(Icons.schedule_rounded, '25-30 min'),
+                      _buildInfoChip(Icons.whatshot_rounded, '450 kcal'),
                       _buildInfoChip(Icons.star_rounded, '${widget.item.rating} Rating', color: Colors.amber),
                     ],
                   ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
@@ -292,7 +292,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
+                    const Icon(Icons.shopping_basket_rounded, color: Colors.white, size: 20),
                     const SizedBox(width: 10),
                     Text(
                       'Add to Bag',

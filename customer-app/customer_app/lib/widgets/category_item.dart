@@ -53,15 +53,18 @@ class CravyoCategoryItem extends StatelessWidget {
               ),
               child: Center(
                 child: imageUrl != null && imageUrl!.isNotEmpty
-                    ? Image.network(
-                        imageUrl!,
-                        height: 38,
-                        width: 38,
-                        fit: BoxFit.contain,
-                        errorBuilder: (c, e, s) => Icon(
-                          icon,
-                          color: isSelected ? Colors.white : AppColors.primary,
-                          size: 30,
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.network(
+                          imageUrl!,
+                          height: 44,
+                          width: 44,
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => Icon(
+                            icon,
+                            color: isSelected ? Colors.white : AppColors.primary,
+                            size: 30,
+                          ),
                         ),
                       )
                     : Icon(

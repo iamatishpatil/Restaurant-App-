@@ -89,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: AppColors.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(_otpSent ? Icons.verified_user_rounded : Icons.smartphone_rounded, size: 60, color: AppColors.primary),
+                child: Icon(_otpSent ? Icons.mark_email_read_rounded : Icons.phone_android_rounded, size: 60, color: AppColors.primary),
               ),
               const SizedBox(height: 48),
               if (!_otpSent) ...[

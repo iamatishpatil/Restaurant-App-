@@ -59,14 +59,14 @@ class _CravyoFoodCardState extends State<CravyoFoodCard> {
                         CachedNetworkImage(
                           imageUrl: ApiService.getImageUrl(widget.item.image),
                           fit: BoxFit.cover,
-                          height: 160, 
+                          height: 220, 
                           width: double.infinity,
                           placeholder: (context, url) => Container(
-                            height: 160,
+                            height: 220,
                             color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
                           ),
                           errorWidget: (context, url, error) => Container(
-                            height: 160,
+                            height: 220,
                             color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
                             child: Icon(Icons.fastfood_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
                           ),
@@ -187,7 +187,7 @@ class _CravyoFoodCardState extends State<CravyoFoodCard> {
           ],
         ),
       ),
-    ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), curve: Curves.easeOutBack);
+    ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.7, 0.7), end: const Offset(1, 1), curve: Curves.elasticOut, duration: 800.ms);
   }
 
   Widget _buildAddButton(BuildContext context) {
@@ -209,8 +209,8 @@ class _CravyoFoodCardState extends State<CravyoFoodCard> {
       },
       child: AnimatedScale(
         scale: _scale,
-        duration: 100.ms,
-        curve: Curves.easeOutBack,
+        duration: 300.ms,
+        curve: Curves.elasticOut,
         child: Container(
           height: 36,
           width: 36,

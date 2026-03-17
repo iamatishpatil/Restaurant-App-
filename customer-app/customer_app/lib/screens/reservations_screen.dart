@@ -163,8 +163,11 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
             ? Center(child: Text('No reservations yet.', style: GoogleFonts.poppins(color: Colors.grey)))
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: _reservations.length,
+                itemCount: _reservations.length + 1,
                 itemBuilder: (ctx, i) {
+                  if (i == _reservations.length) {
+                    return const SizedBox(height: 160);
+                  }
                   final r = _reservations[i];
                   return Card(
                     color: Theme.of(context).cardTheme.color,
@@ -220,11 +223,14 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                   );
                 }
               ),
-       floatingActionButton: auth.isAuthenticated ? FloatingActionButton.extended(
-         onPressed: _showBookingModal,
-         backgroundColor: AppColors.primary,
-         icon: const Icon(Icons.event_seat, color: Colors.white),
-         label: const Text('Book Table', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+       floatingActionButton: auth.isAuthenticated ? Padding(
+         padding: const EdgeInsets.only(bottom: 110),
+         child: FloatingActionButton.extended(
+           onPressed: _showBookingModal,
+           backgroundColor: AppColors.primary,
+           icon: const Icon(Icons.event_seat, color: Colors.white),
+           label: const Text('Book Table', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+         ),
        ) : null,
     );
   }

@@ -85,10 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<MenuItem> _getFilteredItems(bool isVegMode) {
-    if (isVegMode) {
-      return _items.where((item) => item.isVeg).toList();
-    }
-    return _items.where((item) => !item.isVeg).toList();
+    return _items.where((item) => item.isVeg == isVegMode).toList();
   }
 
   Future<void> _fetchFilteredItems(String categoryId) async {
@@ -141,6 +138,45 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Theme.of(context).scaffoldBackgroundColor,
         actions: [
+          Consumer<ModeProvider>(
+            builder: (context, mode, _) {
+              return GestureDetector(
+                onTap: () => mode.toggleMode(),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: mode.isVegMode ? const Color(0xFF00C853).withOpacity(0.1) : AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: mode.isVegMode ? const Color(0xFF00C853).withOpacity(0.3) : AppColors.primary.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        mode.isVegMode ? Icons.spa_rounded : Icons.kebab_dining_rounded,
+                        color: mode.isVegMode ? const Color(0xFF00C853) : AppColors.primary,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        mode.isVegMode ? 'VEG' : 'NON-VEG',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: mode.isVegMode ? const Color(0xFF00C853) : AppColors.primary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
           GestureDetector(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
             child: Container(
@@ -234,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Theme.of(context).dividerColor),
               ),
-              child: Icon(Icons.person_3_outlined, color: Theme.of(context).colorScheme.onSurface, size: 22),
+              child: Icon(Icons.person_outline_rounded, color: Theme.of(context).colorScheme.onSurface, size: 22),
             ),
           ),
         ],
@@ -291,7 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
   
                   // Categories
                   const SizedBox(height: 8),
-                  _buildSectionHeader('What\'s on your mind?', onSeeAll: () {}),
+                  _buildSectionHeader('Explore Menu', icon: Icons.explore_rounded, onSeeAll: () {}),
                   SizedBox(
                     height: 110,
                     child: ListView.builder(
@@ -323,9 +359,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ).animate().fadeIn(delay: 100.ms, duration: 400.ms).slideX(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
   
                   if (_buyAgainItems.isNotEmpty) ...[
-                    _buildSectionHeader('Buy it again'),
+                    _buildSectionHeader('Buy it again', icon: Icons.history_rounded),
                     SizedBox(
-                      height: 260,
+                      height: 340,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
@@ -340,9 +376,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
 
                   if (_suggestionItems.isNotEmpty) ...[
-                    _buildSectionHeader('Recommended for You'),
+                    _buildSectionHeader('Recommended for You', icon: Icons.auto_awesome_rounded),
                     SizedBox(
-                      height: 260,
+                      height: 340,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
@@ -403,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ).animate().fadeIn(delay: 500.ms).slideX(),
-                  _buildSectionHeader('Popular Dishes'),
+                  _buildSectionHeader('Popular Dishes', icon: Icons.star_rounded),
   
                   Consumer<ModeProvider>(
                     builder: (context, mode, _) {
@@ -418,20 +454,23 @@ class _HomeScreenState extends State<HomeScreen> {
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.62, // Adjusted for premium card height
+                          crossAxisCount: 1,
+                          childAspectRatio: 1.05,
                           crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
+                          mainAxisSpacing: 24,
                         ),
                         itemCount: filteredItems.length,
                         itemBuilder: (ctx, i) {
-                          return CravyoFoodCard(item: filteredItems[i]);
+                          return CravyoFoodCard(item: filteredItems[i])
+                            .animate()
+                            .fadeIn(delay: (i * 100).ms, duration: 400.ms)
+                            .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), curve: Curves.easeOutBack);
                         },
                       );
                     },
                   ),
                 ],
-                const SizedBox(height: 100),
+                const SizedBox(height: 120),
               ],
             ),
           ),
@@ -440,13 +479,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, {VoidCallback? onSeeAll}) {
+  Widget _buildSectionHeader(String title, {IconData? icon, VoidCallback? onSeeAll}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 20, color: AppColors.primary),
+                const SizedBox(width: 8),
+              ],
+              Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 18)),
+            ],
+          ),
           if (onSeeAll != null)
             GestureDetector(
               onTap: onSeeAll,
@@ -460,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), alignment: Alignment.centerLeft);
   }
 
   Widget _buildEmptyState() {

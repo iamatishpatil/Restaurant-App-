@@ -94,7 +94,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       color: AppColors.primary,
       child: ListView.builder(
         itemCount: _orders.length,
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
         physics: const BouncingScrollPhysics(),
         itemBuilder: (ctx, i) {
           final order = _orders[i];

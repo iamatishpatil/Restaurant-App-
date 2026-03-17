@@ -5,6 +5,7 @@ import { PrismaClient } from "@prisma/client";
 import rateLimit from "express-rate-limit";
 import { createServer } from "http";
 import path from "path";
+import { errorMiddleware } from "./middlewares/errorMiddleware";
 
 dotenv.config();
 
@@ -60,14 +61,8 @@ app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "ok", message: "Restaurant API is running" });
 });
 
-// Global Error Handler
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    status: "error",
-    message: err.message || "Internal Server Error"
-  });
-});
+// Global Error Handler - Must be after all routes
+app.use(errorMiddleware);
 
 // Initialize Socket.io
 socketService.init(httpServer);

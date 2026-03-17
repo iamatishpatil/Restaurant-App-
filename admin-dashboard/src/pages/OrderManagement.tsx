@@ -17,6 +17,7 @@ import { formatINR } from '../utils/formatCurrency';
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
+  const [prevOrderCount, setPrevOrderCount] = useState(0);
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,11 +31,28 @@ const OrderManagement = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const playNotificationSound = () => {
+    // Only play if this isn't the first load
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    audio.play().catch(e => console.log('Audio play failed:', e));
+  };
+
   const fetchOrders = async () => {
+    // If it's already loading, don't poll
+    if (isLoading) return;
+    
     setIsLoading(true);
     try {
       const res = await api.get('/orders');
-      setOrders(res.data);
+      const newOrders = res.data;
+      
+      // If order count increased, play sound (and we've already loaded once)
+      if (prevOrderCount > 0 && newOrders.length > prevOrderCount) {
+        playNotificationSound();
+      }
+      
+      setOrders(newOrders);
+      setPrevOrderCount(newOrders.length);
     } catch (err) {
       console.error(err);
     } finally {
@@ -173,7 +191,7 @@ const OrderManagement = () => {
                       )}
                     </div>
                     <p className="text-sm text-gray-500 truncate">
-                      {order.user?.name || 'Guest'} &bull; {order.totalItems} item{order.totalItems !== 1 ? 's' : ''}
+                      {order.user?.name || 'Guest'} &bull; {order.orderItems?.length || 0} item{(order.orderItems?.length || 0) !== 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>
@@ -284,10 +302,10 @@ const OrderManagement = () => {
 
               <div className="space-y-4">
                 <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Order Items ({selectedOrderDetail.totalItems})
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Order Items ({selectedOrderDetail.orderItems?.length || 0})
                 </h4>
                 <div className="space-y-3">
-                  {selectedOrderDetail.orderItems.map((item: any) => (
+                  {(selectedOrderDetail.orderItems || []).map((item: any) => (
                     <div key={item.id} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 border border-gray-100 group hover:bg-white hover:border-red-100 hover:shadow-sm transition-all">
                       <div className="flex items-center gap-4">
                         <div className="h-14 w-14 rounded-2xl bg-white border border-gray-100 overflow-hidden shadow-inner flex-shrink-0">

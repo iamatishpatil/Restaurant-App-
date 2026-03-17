@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../utils/constants.dart';
 
 class CravyoCategoryItem extends StatelessWidget {
@@ -35,7 +36,7 @@ class CravyoCategoryItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 80, // Slightly wider
+        width: 80,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(
           children: [
@@ -47,7 +48,7 @@ class CravyoCategoryItem extends StatelessWidget {
               padding: const EdgeInsets.all(AppSpacing.small),
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.primary : (Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5) : bgColor),
-                borderRadius: BorderRadius.circular(22), // Premium squircle look
+                borderRadius: BorderRadius.circular(22),
                 boxShadow: isSelected ? AppShadows.premiumShadow : [],
               ),
               child: Center(
@@ -69,7 +70,10 @@ class CravyoCategoryItem extends StatelessWidget {
                         size: 30,
                       ),
               ),
-            ),
+            ).animate(target: isSelected ? 1 : 0)
+             .scale(begin: const Offset(1, 1), end: const Offset(1.15, 1.15), curve: Curves.elasticOut, duration: 600.ms)
+             .then()
+             .shimmer(duration: 1200.ms, color: Colors.white24),
             const SizedBox(height: 10),
             Text(
               name,
@@ -82,10 +86,15 @@ class CravyoCategoryItem extends StatelessWidget {
                 fontSize: 12.5,
                 letterSpacing: -0.1,
               ),
-            )
+            ).animate(target: isSelected ? 1 : 0)
+             .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1))
+             .custom(builder: (context, value, child) => Padding(
+               padding: EdgeInsets.only(top: value * 2),
+               child: child,
+             ))
           ],
         ),
-      ),
+      ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.5, 0.5), end: const Offset(1, 1), curve: Curves.easeOutBack),
     );
   }
 }

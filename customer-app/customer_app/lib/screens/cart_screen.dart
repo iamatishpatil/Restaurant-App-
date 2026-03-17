@@ -47,7 +47,7 @@ class _CartScreenState extends State<CartScreen> {
             children: [
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
                   physics: const BouncingScrollPhysics(),
                   itemCount: cart.items.length,
                   itemBuilder: (ctx, i) {
@@ -271,7 +271,7 @@ class _CartScreenState extends State<CartScreen> {
 
   Widget _buildCheckoutSection(CartProvider cart) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 110),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 160),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),

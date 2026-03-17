@@ -89,7 +89,7 @@ class ProfileScreen extends StatelessWidget {
                 color: AppColors.surface1,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.person_3_outlined, size: 60, color: AppColors.primary.withOpacity(0.3)),
+              child: Icon(Icons.person_outline_rounded, size: 60, color: AppColors.primary.withOpacity(0.3)),
             ).animate().scale(duration: 600.ms, curve: Curves.bounceOut),
             const SizedBox(height: 40),
             Text(

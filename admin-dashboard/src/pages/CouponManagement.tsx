@@ -90,7 +90,7 @@ const CouponManagement = () => {
             setNewCoupon({ code: '', discountPercent: '', minOrderAmount: '', expiryDate: '' });
             setIsModalOpen(true);
           }}
-          className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-opacity-90 transition font-bold"
+          className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90 transition font-bold"
         >
           <Plus className="h-5 w-5" /> Create Coupon
         </button>
@@ -155,7 +155,7 @@ const CouponManagement = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-md w-full p-6">
             <h2 className="text-xl font-bold mb-4">{editingId ? 'Edit Coupon' : 'Create New Coupon'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">

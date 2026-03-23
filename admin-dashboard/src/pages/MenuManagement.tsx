@@ -215,7 +215,7 @@ const MenuManagement = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-800">{editingItem ? 'Edit Dish' : 'Add New Dish'}</h2>
@@ -335,7 +335,7 @@ const MenuManagement = () => {
                 </div>
               <div className="flex justify-end gap-4 mt-8">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2 border rounded-lg hover:bg-gray-50 transition font-medium">Cancel</button>
-                <button type="submit" disabled={isLoading} className="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-red-600 transition disabled:opacity-50">
+                <button type="submit" disabled={isLoading} className="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition disabled:opacity-50">
                   {isLoading ? 'Saving...' : editingItem ? 'Update Dish' : 'Save Dish'}
                 </button>
               </div>

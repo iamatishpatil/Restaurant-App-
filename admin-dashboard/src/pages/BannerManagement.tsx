@@ -103,7 +103,7 @@ const BannerManagement = () => {
             <div key={banner.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative group hover:shadow-md transition">
               <div className="h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative group">
                 <img src={getImageUrl(banner.image)} alt={banner.title} onError={onImageError} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition"></div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition"></div>
               </div>
               <div className="p-4 flex justify-between items-center">
                 <div>

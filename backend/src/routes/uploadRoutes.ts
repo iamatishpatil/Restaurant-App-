@@ -48,7 +48,7 @@ router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), upload.single('ima
     
     const localPath = path.join(uploadDir, filename);
     fs.writeFileSync(localPath, req.file.buffer);
-    const imageUrl = `http://localhost:5000/uploads/${filename}`;
+    const imageUrl = `/uploads/${filename}`;
     res.json({ imageUrl });
   }
 });

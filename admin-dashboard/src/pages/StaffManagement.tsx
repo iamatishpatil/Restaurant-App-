@@ -17,7 +17,8 @@ const StaffManagement = () => {
     setIsLoading(true);
     try {
       const res = await api.get('/admin/staff');
-      setStaff(res.data.staff || []);
+      // The backend returns the array directly
+      setStaff(res.data || []);
     } catch (error) {
       console.error('Error fetching staff:', error);
     } finally {
@@ -33,9 +34,10 @@ const StaffManagement = () => {
       setIsModalOpen(false);
       setNewStaff({ name: '', email: '', password: '', role: 'CHEF' });
       fetchStaff();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to add staff member');
+      const errorMessage = err.response?.data?.message || 'Failed to add staff member';
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +63,7 @@ const StaffManagement = () => {
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-opacity-90 transition"
+          className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90 transition"
         >
           <Plus className="h-5 w-5" /> Add Staff
         </button>
@@ -112,7 +114,7 @@ const StaffManagement = () => {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-md w-full p-6">
             <h2 className="text-xl font-bold mb-4">Add New Staff Member</h2>
             <form onSubmit={handleSubmit} className="space-y-4">

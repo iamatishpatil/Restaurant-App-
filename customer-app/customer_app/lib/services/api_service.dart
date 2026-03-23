@@ -70,8 +70,18 @@ class ApiService {
 
   static String getImageUrl(String? path) {
     if (path == null || path.isEmpty) return 'https://via.placeholder.com/150';
-    if (path.startsWith('http')) return path;
+    
     final base = baseUrl.replaceAll('/api', '');
+    
+    if (path.startsWith('http')) {
+      // If it's already an absolute URL but pointing to localhost, swap it with the current baseUrl host
+      if (path.contains('localhost:5000') || path.contains('127.0.0.1:5000')) {
+        return path.replaceAll('http://localhost:5000', base)
+                   .replaceAll('http://127.0.0.1:5000', base);
+      }
+      return path;
+    }
+    
     return '$base${path.startsWith('/') ? '' : '/'}$path';
   }
 }

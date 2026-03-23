@@ -102,7 +102,7 @@ const CategoryManagement = () => {
             setNewCategory({ name: '', image: '', description: '' });
             setIsModalOpen(true);
           }}
-          className="bg-primary text-white flex-shrink-0 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-opacity-90 transition"
+          className="bg-primary text-white flex-shrink-0 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90 transition"
         >
           <Plus className="h-5 w-5" /> Add Category
         </button>
@@ -157,7 +157,7 @@ const CategoryManagement = () => {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-xl max-w-md w-full p-6 my-8">
             <h2 className="text-xl font-bold mb-4">{editingId ? 'Edit Category' : 'Add New Category'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">

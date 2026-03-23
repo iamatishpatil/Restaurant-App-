@@ -12,8 +12,9 @@ import '../services/api_service.dart';
 
 class CravyoFoodCard extends StatefulWidget {
   final MenuItem item;
+  final String? heroTag; // Added for unique Hero transitions
 
-  const CravyoFoodCard({super.key, required this.item});
+  const CravyoFoodCard({super.key, required this.item, this.heroTag});
 
   @override
   State<CravyoFoodCard> createState() => _CravyoFoodCardState();
@@ -49,7 +50,7 @@ class _CravyoFoodCardState extends State<CravyoFoodCard> {
             Stack(
               children: [
                 Hero(
-                  tag: 'dish_${widget.item.id}',
+                  tag: widget.heroTag ?? 'dish_${widget.item.id}',
                   child: ClipRRect(
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(AppRadius.card),

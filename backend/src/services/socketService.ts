@@ -55,6 +55,14 @@ class SocketService {
       console.log('📢 Waiter notified: Order Ready');
     }
   }
+
+  // Notify whenever a new reservation is made
+  notifyNewReservation(reservation: any) {
+    if (this.io) {
+      this.io.to('admins').emit('new_reservation', reservation);
+      console.log('📢 New reservation broadcasted to admins');
+    }
+  }
 }
 
 export const socketService = new SocketService();

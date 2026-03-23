@@ -19,6 +19,7 @@ import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import '../providers/table_provider.dart';
 import 'qr_scanner_screen.dart';
+import '../services/cache_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -48,51 +49,70 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchInitialData() async {
     try {
       final responses = await Future.wait([
-        ApiService.get('/menu/categories'),
-        ApiService.get('/menu/items'),
-        ApiService.get('/admin/banners'),
-        ApiService.get('/orders/recommendations'),
-        ApiService.get('/orders/wait-time'),
+        ApiService.get('/menu/categories').timeout(const Duration(seconds: 5)),
+        ApiService.get('/menu/items').timeout(const Duration(seconds: 5)),
+        ApiService.get('/admin/banners').timeout(const Duration(seconds: 5)),
+        ApiService.get('/orders/recommendations').timeout(const Duration(seconds: 5)),
+        ApiService.get('/orders/wait-time').timeout(const Duration(seconds: 5)),
       ]);
 
       if (responses[0].statusCode == 200) {
         _categories = jsonDecode(responses[0].body);
+        CacheService.saveCategories(_categories);
       }
       if (responses[1].statusCode == 200) {
         final List<dynamic> data = jsonDecode(responses[1].body);
         _items = data.map((item) => MenuItem.fromJson(item)).toList();
         _allItems = List.from(_items);
+        CacheService.saveMenuItems(data);
       }
       if (responses[2].statusCode == 200) {
         _banners = jsonDecode(responses[2].body);
       }
       if (responses[3].statusCode == 200) {
         final recData = jsonDecode(responses[3].body);
-        _buyAgainItems = (recData['buyAgain'] as List).map((i) => MenuItem.fromJson(i)).toList();
-        _suggestionItems = (recData['suggestions'] as List).map((i) => MenuItem.fromJson(i)).toList();
+        if (recData['buyAgain'] != null && recData['buyAgain'] is List) {
+          _buyAgainItems = (recData['buyAgain'] as List).map((i) => MenuItem.fromJson(i)).toList();
+        }
+        if (recData['suggestions'] != null && recData['suggestions'] is List) {
+          _suggestionItems = (recData['suggestions'] as List).map((i) => MenuItem.fromJson(i)).toList();
+        }
       }
       if (responses[4].statusCode == 200) {
         _waitTime = jsonDecode(responses[4].body)['estimatedWait'] ?? 15;
       }
-
-      setState(() {
-        _isLoading = false;
-      });
     } catch (e) {
-      print('Error fetching home data: $e');
-      setState(() => _isLoading = false);
+      print('Error fetching home data, attempting to load from cache: $e');
+      _loadFromCache();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  List<MenuItem> _getFilteredItems(bool isVegMode) {
-    return _items.where((item) => item.isVeg == isVegMode).toList();
+  void _loadFromCache() {
+    final cachedCats = CacheService.getCategories();
+    final cachedItems = CacheService.getMenuItems();
+
+    if (cachedCats != null) {
+      _categories = cachedCats;
+    }
+    if (cachedItems != null) {
+      _items = cachedItems.map((item) => MenuItem.fromJson(item)).toList();
+      _allItems = List.from(_items);
+    }
   }
 
   Future<void> _fetchFilteredItems(String categoryId) async {
+    if (categoryId == _selectedCategoryId) return;
+    
     setState(() => _isLoading = true);
     try {
       final endpoint = categoryId == 'ALL' ? '/menu/items' : '/menu/items?categoryId=$categoryId';
-      final response = await ApiService.get(endpoint);
+      final response = await ApiService.get(endpoint).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         setState(() {
@@ -103,8 +123,16 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print('Error filtering menu: $e');
-      setState(() => _isLoading = false);
+      print('Error filtering menu, using cached all items: $e');
+      setState(() {
+        if (categoryId == 'ALL') {
+          _items = List.from(_allItems);
+        } else {
+          _items = _allItems.where((i) => i.categoryId == categoryId).toList();
+        }
+        _selectedCategoryId = categoryId;
+        _isLoading = false;
+      });
     }
   }
 
@@ -370,7 +398,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemCount: _buyAgainItems.length,
                         itemBuilder: (ctx, i) => SizedBox(
                           width: 170,
-                          child: CravyoFoodCard(item: _buyAgainItems[i]),
+                          child: CravyoFoodCard(
+                            item: _buyAgainItems[i],
+                            heroTag: 'buy_again_${_buyAgainItems[i].id}',
+                          ),
                         ),
                       ),
                     ).animate().fadeIn(delay: 300.ms),
@@ -387,7 +418,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemCount: _suggestionItems.length,
                         itemBuilder: (ctx, i) => SizedBox(
                           width: 170,
-                          child: CravyoFoodCard(item: _suggestionItems[i]),
+                          child: CravyoFoodCard(
+                            item: _suggestionItems[i],
+                            heroTag: 'suggestion_${_suggestionItems[i].id}',
+                          ),
                         ),
                       ),
                     ).animate().fadeIn(delay: 400.ms),
@@ -462,7 +496,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         itemCount: filteredItems.length,
                         itemBuilder: (ctx, i) {
-                          return CravyoFoodCard(item: filteredItems[i])
+                          return CravyoFoodCard(
+                            item: filteredItems[i],
+                            heroTag: 'popular_${filteredItems[i].id}',
+                          )
                             .animate()
                             .fadeIn(delay: (i * 100).ms, duration: 400.ms)
                             .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), curve: Curves.easeOutBack);

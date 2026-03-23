@@ -10,6 +10,7 @@ class AuthProvider with ChangeNotifier {
 
   AuthProvider() {
     ApiService.setLogoutCallback(logout);
+    tryAutoLogin();
   }
 
   User? get user => _user;
@@ -76,12 +77,15 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> tryAutoLogin() async {
     final prefs = await SharedPreferences.getInstance();
-    if (!prefs.containsKey('token')) return;
+    if (!prefs.containsKey('token') || !prefs.containsKey('user')) return;
     
     _token = prefs.getString('token');
-    final userData = jsonDecode(prefs.getString('user')!);
-    _user = User.fromJson(userData);
-    notifyListeners();
+    final String? userStr = prefs.getString('user');
+    if (userStr != null) {
+      final userData = jsonDecode(userStr);
+      _user = User.fromJson(userData);
+      notifyListeners();
+    }
   }
 
   Future<bool> updateProfile(String name, String email, String phone) async {

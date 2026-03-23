@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../index";
+import { socketService } from "../services/socketService";
+import { sendNotification } from "../services/notificationService";
 
 export const createReservation = async (req: any, res: Response) => {
   try {
@@ -19,8 +21,16 @@ export const createReservation = async (req: any, res: Response) => {
         specialRequest,
         depositAmount,
         status: depositAmount > 0 ? "AWAITING_PAYMENT" : "PENDING"
-      }
+      },
+      include: { user: true }
     });
+
+    // Notify admins via Socket
+    socketService.notifyNewReservation(reservation);
+
+    // Also send a push to admins (could be multiple, for now just log it or send to a specific admin)
+    // For now, only notify the customer that their request is pending
+    await sendNotification(userId, "Reservation Received", "Your table reservation has been received and is pending confirmation.");
 
     res.status(201).json(reservation);
   } catch (error: any) {
@@ -94,7 +104,12 @@ export const updateReservationStatus = async (req: Request, res: Response) => {
     }
 
     if (title) {
-        await createNotification(reservation.userId, title, message, "RESERVATION");
+        await sendNotification(reservation.userId, title, message);
+    }
+
+    // Notify real-time (optional, can add a general reservation update event if needed)
+    if (this && (this as any).io) {
+       // Optional socket emit
     }
     
     res.json(reservation);
@@ -116,11 +131,10 @@ export const payReservation = async (req: Request, res: Response) => {
     });
 
     // Notify user of payment success
-    await createNotification(
+    await sendNotification(
       reservation.userId, 
       "Deposit Received", 
-      "We've received your deposit. Your reservation is now pending restaurant confirmation.", 
-      "RESERVATION"
+      "We've received your deposit. Your reservation is now pending restaurant confirmation."
     );
 
     res.json(reservation);

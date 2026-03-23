@@ -34,6 +34,19 @@ export const createOrder = async (req: any, res: Response) => {
     const userId = req.user.id;
 
     const order = await prisma.$transaction(async (tx) => {
+      // 0. Verify Table state if DINE_IN
+      if (deliveryType === "DINE_IN" && tableId) {
+        const table = await tx.table.findUnique({ where: { id: tableId } });
+        if (!table) throw new Error("Selected table not found");
+        if (table.status !== "AVAILABLE") throw new Error("Table is currently occupied or reserved");
+        
+        // Mark table as occupied
+        await tx.table.update({
+          where: { id: tableId },
+          data: { status: "OCCUPIED" }
+        });
+      }
+
       // 1. Create Order
       const newOrder = await tx.order.create({
         data: {
@@ -46,6 +59,11 @@ export const createOrder = async (req: any, res: Response) => {
           tableId: (deliveryType === "DINE_IN" ? tableId : null) || null,
           addressId: deliveryType === "DELIVERY" ? addressId : null,
           status: "NEW_ORDER",
+          statusLogs: {
+            create: {
+              status: "NEW_ORDER",
+            }
+          },
           notes: couponCode ? `Coupon applied: ${couponCode}` : null,
           orderItems: {
             create: items.map((item: any) => ({
@@ -175,12 +193,27 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
               });
            }
          }
+         
+         // Mark table as available again if it was a DINE_IN order
+         if (orderToDeduct.deliveryType === 'DINE_IN' && orderToDeduct.tableId) {
+           await prisma.table.update({
+             where: { id: orderToDeduct.tableId },
+             data: { status: 'AVAILABLE' }
+           });
+         }
        }
     }
 
     const order = await prisma.order.update({
       where: { id },
-      data: orderData,
+      data: {
+        ...orderData,
+        statusLogs: {
+          create: {
+            status,
+          }
+        }
+      },
       include: { 
         user: true,
         orderItems: { include: { menuItem: true } },

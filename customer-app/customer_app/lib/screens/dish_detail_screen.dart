@@ -84,6 +84,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                   Positioned(
                     bottom: 30,
                     left: 20,
+                    right: 20,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

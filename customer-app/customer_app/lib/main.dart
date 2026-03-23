@@ -20,7 +20,12 @@ import 'screens/order_tracking_screen.dart';
 import 'utils/theme.dart';
 import 'utils/constants.dart';
 
-void main() {
+import 'services/cache_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await CacheService.init();
+  
   runApp(
     MultiProvider(
       providers: [
@@ -79,10 +84,13 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  void _fetchInitialData() {
+  void _fetchInitialData() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
+    await auth.tryAutoLogin();
     if (auth.isAuthenticated) {
-      Provider.of<OrderProvider>(context, listen: false).fetchActiveOrder();
+      if (mounted) {
+        Provider.of<OrderProvider>(context, listen: false).fetchActiveOrder();
+      }
     }
   }
 

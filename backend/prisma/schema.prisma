@@ -40,6 +40,7 @@ model User {
   reviews       Review[]
   favorites     Favorite[]
   reservations  Reservation[]
+  fcmToken      String?
   notifications Notification[]
 }
 
@@ -182,6 +183,7 @@ model Staff {
   role         Role
   statusLogs   OrderStatusLog[]
   isActive     Boolean          @default(true)
+  fcmToken     String?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 }

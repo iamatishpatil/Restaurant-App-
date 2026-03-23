@@ -172,3 +172,24 @@ export const verifyOTP = catchAsync(async (req: Request, res: Response) => {
     token 
   });
 });
+
+export const updateFCMToken = catchAsync(async (req: Request, res: Response) => {
+  const { fcmToken } = req.body;
+  const userId = (req as any).user.id;
+  
+  // Update in User or Staff depending on which table the ID belongs to
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { fcmToken } as any
+    });
+  } else {
+    await prisma.staff.update({
+      where: { id: userId },
+      data: { fcmToken } as any
+    });
+  }
+  
+  res.json({ status: 'success', message: 'FCM token updated' });
+});

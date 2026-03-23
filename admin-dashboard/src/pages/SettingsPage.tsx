@@ -11,7 +11,11 @@ const SettingsPage = () => {
     businessEmail: '',
     storeAddress: '',
     acceptingOrders: true,
-    pushNotifications: true
+    pushNotifications: true,
+    currency: 'INR',
+    taxRate: 5.0,
+    deliveryRadiusKm: 5.0,
+    minOrderValue: 0.0
   });
 
   useEffect(() => {
@@ -104,6 +108,61 @@ const SettingsPage = () => {
                 value={settings.storeAddress}
                 onChange={(e) => setSettings({ ...settings, storeAddress: e.target.value })}
               />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+              <Shield className="h-5 w-5" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-800">Financial & Delivery</h2>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Currency Symbol</label>
+                <select 
+                  className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-primary"
+                  value={settings.currency}
+                  onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
+                >
+                  <option value="INR">₹ (INR)</option>
+                  <option value="USD">$ (USD)</option>
+                  <option value="EUR">€ (EUR)</option>
+                  <option value="GBP">£ (GBP)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tax Rate (%)</label>
+                <input
+                  type="number" step="0.1" required
+                  className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-primary"
+                  value={settings.taxRate}
+                  onChange={(e) => setSettings({ ...settings, taxRate: parseFloat(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Radius (km)</label>
+                <input
+                  type="number" step="0.5" required
+                  className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-primary"
+                  value={settings.deliveryRadiusKm}
+                  onChange={(e) => setSettings({ ...settings, deliveryRadiusKm: parseFloat(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Min. Order Value</label>
+                <input
+                  type="number" required
+                  className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-primary"
+                  value={settings.minOrderValue}
+                  onChange={(e) => setSettings({ ...settings, minOrderValue: parseFloat(e.target.value) })}
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { formatINR } from '../utils/formatCurrency';
 import { getImageUrl, onImageError } from '../utils/imageUtils';
+import { socketService } from '../services/socket';
 
 const defaultData = [
   { name: 'Mon', revenue: 14000, orders: 24 },
@@ -75,8 +76,30 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchAnalytics();
-    const interval = setInterval(fetchAnalytics, 30000); // Poll every 30 seconds
-    return () => clearInterval(interval);
+    
+    // Setup Socket.io
+    const socket = socketService.connect();
+    if (socket) {
+      socket.on('new_order', (order: any) => {
+        console.log('New order received:', order);
+        // Refresh analytics when a new order comes in
+        fetchAnalytics();
+        // Optional: Add a toast notification here
+        alert('🔔 New Order Received!');
+      });
+
+      socket.on('new_reservation', (res: any) => {
+        console.log('New reservation received:', res);
+        fetchAnalytics();
+        alert('📅 New Reservation Received!');
+      });
+    }
+
+    const interval = setInterval(fetchAnalytics, 60000); // Polling reduced to every 60 seconds (fallback)
+    return () => {
+      clearInterval(interval);
+      socketService.disconnect();
+    };
   }, []);
 
   const fetchAnalytics = async () => {

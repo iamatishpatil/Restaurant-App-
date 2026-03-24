@@ -11,6 +11,7 @@ class MenuItem {
   final double rating;
   final String categoryId;
   final bool isAvailable;
+  final int? preparationTime;
 
   MenuItem({
     required this.id,
@@ -25,6 +26,7 @@ class MenuItem {
     required this.rating,
     required this.categoryId,
     required this.isAvailable,
+    this.preparationTime,
   });
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class MenuItem {
       rating: double.parse((json['rating'] ?? 0.0).toString()),
       categoryId: json['categoryId'],
       isAvailable: json['isAvailable'] ?? true,
+      preparationTime: json['preparationTime'] != null ? int.parse(json['preparationTime'].toString()) : null,
     );
   }
 }

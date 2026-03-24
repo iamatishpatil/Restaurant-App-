@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Star, MessageSquare, Trash2 } from 'lucide-react';
+import { Star, MessageSquare, Trash2, FastForward } from 'lucide-react';
+import { getImageUrl, FOOD_PLACEHOLDER, onImageError } from '../utils/imageUtils';
 
 const ReviewModeration = () => {
   const [reviews, setReviews] = useState([]);
@@ -57,21 +58,28 @@ const ReviewModeration = () => {
           reviews.map((review: any) => (
             <div key={review.id} className="p-6 hover:bg-gray-50 transition">
                <div className="flex justify-between items-start">
-                  <div className="flex gap-4">
-                     <div className="bg-primary/10 p-2 rounded-lg h-10 w-10 flex items-center justify-center">
-                        <MessageSquare className="h-5 w-5 text-primary" />
+                  <div className="flex gap-4 items-start">
+                     <div className="h-16 w-16 rounded-xl overflow-hidden border border-gray-100 flex-shrink-0 shadow-sm bg-gray-50">
+                        <img 
+                           src={getImageUrl(review.menuItem?.image) || FOOD_PLACEHOLDER} 
+                           alt={review.menuItem?.name}
+                           className="h-full w-full object-cover"
+                           onError={onImageError}
+                        />
                      </div>
                      <div>
-                        <div className="flex items-center gap-2">
-                           <h3 className="font-bold text-gray-800">{review.user?.name || 'Anonymous'}</h3>
-                           <div className="flex items-center text-amber-500">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                           <h3 className="font-bold text-gray-900">{review.user?.name || 'Anonymous'}</h3>
+                           <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full uppercase font-semibold">reviewed</span>
+                           <h4 className="text-primary font-bold text-sm">{review.menuItem?.name || 'Unknown Dish'}</h4>
+                           <div className="flex items-center text-amber-500 ml-2">
                               {[...Array(5)].map((_, i) => (
                                  <Star key={i} className={`h-3 w-3 ${i < review.rating ? 'fill-current' : 'text-gray-300'}`} />
                               ))}
                            </div>
                         </div>
-                        <p className="text-gray-600 mt-1">{review.comment || 'No comment provided.'}</p>
-                        <span className="text-xs text-gray-400 mt-2 block">{new Date(review.createdAt).toLocaleString()}</span>
+                        <p className="text-gray-600 mt-2 text-sm italic leading-relaxed">"{review.comment || 'No comment provided.'}"</p>
+                        <span className="text-[10px] text-gray-400 mt-2 block font-medium">{new Date(review.createdAt).toLocaleString()}</span>
                      </div>
                   </div>
                   <div className="flex gap-2">

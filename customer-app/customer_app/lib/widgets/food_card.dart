@@ -95,24 +95,29 @@ class _CravyoFoodCardState extends State<CravyoFoodCard> {
                   bottom: 12,
                   right: 12,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                          color: Colors.white.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white.withOpacity(0.2), width: 0.5),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
+                            const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 16),
                             const SizedBox(width: 4),
                             Text(
-                              widget.item.rating.toString(),
-                              style: GoogleFonts.poppins(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
+                              '${widget.item.rating} (1.2k+)',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white, 
+                                fontSize: 13, 
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ],
                         ),
@@ -149,21 +154,68 @@ class _CravyoFoodCardState extends State<CravyoFoodCard> {
                         Text(
                           widget.item.name,
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: Theme.of(context).colorScheme.onSurface,
-                            letterSpacing: -0.2,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.primary,
+                            letterSpacing: -0.5,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        Text(
-                          'Chef Special • 20 min',
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        if (widget.item.description != null && widget.item.description!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.item.description!,
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                        ],
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.timer_outlined, size: 13, color: Colors.amber),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${widget.item.preparationTime ?? 15} MINS',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.amber,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            if (widget.item.rating > 4.5) ...[
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.amber.withOpacity(0.2), width: 0.5),
+                                    ),
+                                    child: Text(
+                                      'BESTSELLER',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.amber[800],
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
@@ -171,11 +223,12 @@ class _CravyoFoodCardState extends State<CravyoFoodCard> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '${AppConstants.currency}${widget.item.price}',
-                          style: GoogleFonts.poppins(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
+                          '${AppConstants.currency}${widget.item.price % 1 == 0 ? widget.item.price.toInt() : widget.item.price}',
+                          style: GoogleFonts.outfit(
+                            color: const Color(0xFF00C853), // Deep Green
+                            fontWeight: FontWeight.w900,
+                            fontSize: 24,
+                            letterSpacing: -1,
                           ),
                         ),
                         _buildAddButton(context),

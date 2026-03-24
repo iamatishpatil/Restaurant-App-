@@ -3,12 +3,12 @@ import { prisma } from '../index';
 
 export const getReviews = async (req: Request, res: Response) => {
   try {
-    const { menuItemId } = req.query;
+    const { menuItemId } = req.params;
     const reviews = await prisma.review.findMany({
       where: menuItemId ? { menuItemId: String(menuItemId) } : {},
       include: { 
         user: { select: { name: true } },
-        menuItem: { select: { name: true } }
+        menuItem: { select: { name: true, image: true } }
       }
     });
     res.json(reviews);

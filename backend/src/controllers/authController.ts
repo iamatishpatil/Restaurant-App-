@@ -6,7 +6,10 @@ import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
+if (!process.env.JWT_SECRET) {
+  console.error("FATAL ERROR: JWT_SECRET is not defined.");
+}
+const JWT_SECRET = process.env.JWT_SECRET || ""; 
 
 export const signup = catchAsync(async (req: Request, res: Response) => {
   const { email, password, name, phone } = req.body;
